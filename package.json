@@ -1,0 +1,56 @@
+{
+  "name": "los-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "desktop:build": "npm run build --workspace=@los/desktop",
+    "desktop:render": "npm run render --workspace=@los/desktop",
+    "desktop:start": "npm run start --workspace=@los/desktop",
+    "desktop:server": "concurrently \"node packages/desktop/server/server.js\" \"python packages/desktop/python/main_server.py\"",
+    "desktop:migrate": "npm run migrate --workspace=@los/desktop",
+    "desktop:migrate:undo": "npm run migrate:undo --workspace=@los/desktop",
+    "desktop:migrate:undo:all": "npm run migrate:undo:all --workspace=@los/desktop",
+    "desktop": "concurrently -n build,server,render-start \"npm run desktop:build && npm run desktop:render\" \"npm run desktop:server\" \"wait-on tcp:3000 && npm run desktop:start\"",
+    "mobile": "npm run start --workspace=@los/mobile",
+    "mobile:clear": "npm run clear --workspace=@los/mobile",
+    "new-version": "lerna version",
+    "publish": "lerna publish",
+    "clean": "npm run clean --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "install": "npm run postinstall --workspaces --if-present",
+    "postinstall": "npm run postinstall --workspaces --if-present"
+  },
+  "dependencies": {
+    "@fortawesome/react-native-fontawesome": "^0.3.2",
+    "@los/shared": "1.0.0",
+    "@types/react-datepicker": "^6.2.0",
+    "axios": "^1.6.2",
+    "chokidar": "^4.0.0",
+    "colors": "^1.4.0",
+    "d3": "^7.8.5",
+    "date-fns": "^3.0.6",
+    "moment": "^2.29.4",
+    "react": "18.2.0",
+    "react-datepicker": "^7.3.0",
+    "react-dom": "18.2.0",
+    "react-modal": "^3.16.1",
+    "react-native-markdown-display": "^7.0.2",
+    "react-native-web": "^0.19.12"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@types/color": "^3.0.6",
+    "@types/d3": "^7.4.3",
+    "@types/react": "^18.2.0",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^8.2.2",
+    "lerna": "^8.1.5",
+    "typescript": "^5.3.3",
+    "wait-on": "^7.2.0"
+  }
+}

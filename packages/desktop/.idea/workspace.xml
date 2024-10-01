@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="5568a710-1ae3-4f4c-99e4-ce3ac74a5ed3" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/dist/daynote.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/daynote.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/homepage.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/homepage.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/index.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/index.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/monthnote.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/monthnote.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/preload.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/preload.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/quarternote.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/quarternote.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/timermodal.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/timermodal.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/weeknote.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/weeknote.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/yearnote.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/dist/yearnote.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/dbmodels/ChecklistModel.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/dbmodels/DailyNotesModel.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/dbmodels/ObjectivesModel.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/dbmodels/TimeModel.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/dbmodels/sequelizeInit.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/tabManager/tabManager.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/tabManager/tabManager.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/Homepage.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/Homepage.css" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ProjectId" id="2XlAxRBvRSnsnOsBwpRAD9yvPSb" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="5568a710-1ae3-4f4c-99e4-ce3ac74a5ed3" name="Changes" comment="" />
+      <created>1699193540088</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1699193540088</updated>
+    </task>
+    <servers />
+  </component>
+</project>

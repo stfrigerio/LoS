@@ -1,0 +1,39 @@
+{
+  "extends": "../../node_modules/expo/tsconfig.base",
+  "compilerOptions": {
+    "target": "es2016",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
+    "jsx": "react",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "types": [
+      "node",
+      "express"
+    ],
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "*.d.ts", // Include .d.ts files from the project root
+    "**/*.d.ts", // Include .d.ts files from all directories recursively
+    "src/components/Charts/TimeStackedChart"
+, "../shared/src/utilities/timeManipulation.ts", "../shared/src/utilities/timeSuggester.tsx", "../shared/src/components/Home/modals/ViewTaskModal.tsx", "../shared/src/components/Home/helpers/calendarHelper.ts", "../shared/src/components/DailyNote/components/DateHeader.tsx", "../shared/src/components/Charts/QuantifiableHabitsChart/QuantifiableHabitsChart.tsx"  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "webpack.config.js"
+  ],
+}

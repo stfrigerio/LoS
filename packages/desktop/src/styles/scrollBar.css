@@ -1,0 +1,17 @@
+/* Style the scrollbar itself (background) */
+::-webkit-scrollbar {
+    width: 12px; /* for vertical scrollbars */
+    height: 12px; /* for horizontal scrollbars */
+    background: transparent;
+  }
+  
+  /* Style the scrollbar thumb (the moving part) */
+  ::-webkit-scrollbar-thumb {
+    background: #333232;
+    border-radius: 6px; /* round corners on the scrollbar thumb */
+  }
+  
+  /* Handle the scrollbar thumb hover state */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #CC5359;
+  }

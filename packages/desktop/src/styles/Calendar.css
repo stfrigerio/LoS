@@ -1,0 +1,124 @@
+/* Center the calendar's entire content */
+.react-calendar__viewContainer {
+    width: 100%; 
+}
+
+.react-calendar {
+    font-family: 'Arial', sans-serif; /* Use a custom font */
+    flex-direction: column; /* Stack children vertically */
+    align-items: center;    /* Center children horizontally */
+    justify-content: center; /* Center children vertically (if there's enough space) */
+    margin: auto;           /* Center the calendar in the page if it has a set width */
+    text-align: center;
+}
+
+.react-calendar__navigation {
+    width: 100%;           /* Make the navigation buttons take the full width of the calendar */
+    display: flex;         /* Use flexbox to align the buttons */
+    justify-content: center; 
+    align-items: center;    /* Align buttons vertically */
+    margin-bottom: 2rem;
+    padding: 0.5rem;    
+}
+
+/* Style the navigation buttons */
+.react-calendar__navigation button {
+    margin: 0 5px;
+    color: #808080;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    font-size: large;
+}
+
+/* Style the month/year label */
+.react-calendar__navigation__label {
+    font-size: 1.5em;
+    text-align: center;   /* Center the text */
+    flex-grow: 0 !important;
+}
+
+.react-calendar__tile {
+    border: none;
+    background: none;
+}
+
+/* The color of the monthh's name */
+.react-calendar__navigation__label__labelText {
+    color: #CBA95F
+}
+
+/* styling of the weeks */
+.react-calendar__month-view__weekNumbers .react-calendar__tile {
+    padding: 18px 16px;
+    font-size: 18px;
+    color: #3a4248
+}
+
+/* Style the active day */
+.react-calendar__tile--active {
+    background-color: rgba(255, 255, 255, 0.1); 
+}
+
+/* Hover effect for days */
+.react-calendar__tile:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Style days on the calendar */
+.react-calendar__month-view__days__day {
+    position: relative;
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    padding: 18px 16px;
+}
+
+/* the days' names on top of the caledar */
+.react-calendar__month-view__weekdays {
+    margin-bottom: 20px;
+}
+
+.react-calendar__month-view__weekdays abbr {
+    color: #808080;
+}
+
+.react-calendar__month-view__weekdays__weekday,
+.react-calendar__tile {
+    position: relative;
+}
+
+/* the color of the days that are not in the current month */
+.react-calendar__month-view__days__day--neighboringMonth abbr {
+    color: #3a4248;
+}
+
+/* tasks */
+
+.task-dot {
+    height: 5px;
+    width: 5px;
+    background-color: #d3c6aa;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.task-dot.yellow {
+    background-color: rgba(204, 197, 20, 0.9);
+}
+
+.task-dot.green {
+    background-color: rgba(61, 247, 52, 0.5);
+}
+
+.current-day {
+    color: #e9c476;; /* Or any color you want for the current day */
+}
+
+abbr {
+    text-decoration: none;
+    font-size: large;
+    color: #d3c6aa
+}

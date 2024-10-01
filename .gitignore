@@ -1,0 +1,63 @@
+# ------ LoS-desktop
+
+packages/desktop/node_modules
+packages/desktop/dist
+
+packages/desktop/src/dbmodels/sequelizeInit.js
+packages/desktop/config/config.json
+
+packages/desktop/.env
+packages/desktop/python/.env
+
+packages/desktop/dist/index.bundle.js
+
+# ------ LoS-mobile
+
+# dependencies
+packages/mobile/node_modules/
+
+# Expo
+packages/mobile/.expo/
+packages/mobile/dist/
+packages/mobile/web-build/
+
+# Native
+packages/mobile/*.orig.*
+packages/mobile/*.jks
+packages/mobile/*.p8
+packages/mobile/*.p12
+packages/mobile/*.key
+packages/mobile/*.mobileprovision
+
+# Metro
+packages/mobile/.metro-health-check*
+
+# debug
+packages/mobile/npm-debug.*
+packages/mobile/yarn-debug.*
+packages/mobile/yarn-error.*
+
+# macOS
+packages/mobile/.DS_Store
+packages/mobile/*.pem
+
+# local env files
+packages/mobile/.env*.local
+packages/mobile/.env
+packages/mobile/app.json
+
+# typescript
+packages/mobile/*.tsbuildinfo
+
+# ------- Shared
+
+node_modules
+.DS_Store
+npm-debug.log
+package-lock.json
+
+LoS_Database/
+LoSTest_Database/
+DatabaseMigration/
+musicLibrary/
+*.pyc

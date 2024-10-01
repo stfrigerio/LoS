@@ -1,0 +1,14 @@
+@import url('./scrollBar.css'); 
+@import url('./Calendar.css');
+@import url('./custom-datepicker.css');
+@import url('react-datepicker/dist/react-datepicker.css');
+
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+input:focus, textarea:focus, button:focus, select:focus {
+    outline: none;
+}
