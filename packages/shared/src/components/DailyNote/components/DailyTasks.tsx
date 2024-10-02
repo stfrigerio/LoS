@@ -32,7 +32,7 @@ const DailyTasks: React.FC<DailyTasksProps> = ({ tasks, onToggleTaskCompletion, 
         setLocalTasks(tasks);
     }, [tasks]);
 
-    const { onDeleteTask, updateTask } = useTasksData();
+    const { deleteTask, updateTask } = useTasksData();
 
     const handleTaskPress = async (task: TaskData) => {
         try {
@@ -97,7 +97,7 @@ const DailyTasks: React.FC<DailyTasksProps> = ({ tasks, onToggleTaskCompletion, 
                                 <View style={[styles.deleteIcon, { marginRight: 15 }]} />
                             )
                         }
-                        <Pressable onPress={() => onDeleteTask(task.uuid!)} style={styles.deleteIcon}>
+                        <Pressable onPress={() => deleteTask(task.uuid!)} style={styles.deleteIcon}>
                             <FontAwesomeIcon icon={faTrash} color={'gray'} size={15} />
                         </Pressable> 
                     </View>

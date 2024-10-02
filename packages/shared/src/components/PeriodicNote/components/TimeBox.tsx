@@ -1,9 +1,15 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-
-import { getLocalTimeZone, parseDate, formatDate, isSamePeriod, getStartOfToday } from '@los/shared/src/utilities/timezoneBullshit';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 import { useHomepage } from '@los/shared/src/components/Home/helpers/useHomepage';
+
+import { 
+  parseDate, 
+  formatDate, 
+  getStartOfToday, 
+  getLocalTimeZone, 
+  isSamePeriod 
+} from '@los/shared/src/utilities/timezoneBullshit';
 
 import { NotePeriod } from '@los/shared/src/components/Home/helpers/useHomepage';
 
@@ -20,19 +26,18 @@ const TimeBox: React.FC<TimeBoxProps> = ({ startDate, endDate, currentViewType }
   const { openNote } = useHomepage();
   const timeZone = getLocalTimeZone();
 
-  // Use dateUtils to parse dates
+  // Parse dates using dateUtils
   const noteStartDate = useMemo(() => parseDate(startDate, timeZone), [startDate, timeZone]);
-  const noteEndDate = useMemo(() => parseDate(endDate, timeZone), [endDate, timeZone]);
   const today = useMemo(() => getStartOfToday(timeZone), [timeZone]);
 
-  // Use dateUtils to format dates
+  // Format dates
   const displayYear = useMemo(() => formatDate(noteStartDate, 'yyyy', timeZone), [noteStartDate, timeZone]);
   const displayQuarter = useMemo(() => `Q${Math.ceil((noteStartDate.getMonth() + 1) / 3)}`, [noteStartDate]);
   const displayMonthName = useMemo(() => formatDate(noteStartDate, 'MMMM', timeZone), [noteStartDate, timeZone]);
-  const displayWeek = useMemo(() => `W${formatDate(noteStartDate, 'w', timeZone)}`, [noteStartDate, timeZone]);
+  const displayWeek = useMemo(() => `W${formatDate(noteStartDate, 'I', timeZone)}`, [noteStartDate, timeZone]);
   const displayDay = useMemo(() => formatDate(noteStartDate, 'd', timeZone), [noteStartDate, timeZone]);
 
-  // Use dateUtils to compare dates
+  // Compare dates
   const isCurrentYear = useMemo(() => isSamePeriod(noteStartDate, today, 'year', timeZone), [noteStartDate, today, timeZone]);
   const isCurrentQuarter = useMemo(() => isSamePeriod(noteStartDate, today, 'quarter', timeZone), [noteStartDate, today, timeZone]);
   const isCurrentMonth = useMemo(() => isSamePeriod(noteStartDate, today, 'month', timeZone), [noteStartDate, today, timeZone]);
