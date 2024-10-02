@@ -3,7 +3,6 @@ import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react'
 import { ScrollView, View, StyleSheet, Platform, Text, Dimensions } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '@los/mobile/App';
-import { format } from 'date-fns';
 
 // Components
 import TimeBox from '@los/shared/src/components/PeriodicNote/components/TimeBox'
@@ -17,15 +16,21 @@ import QuantifiableSection from './components/ChartSection/QuantifiableSection';
 import MoneySection from './components/ChartSection/MoneySection';
 import TimeSection from './components/ChartSection/TimeSection';
 import SleepSection from './components/ChartSection/SleepSection';
+import MobileNavbar from '../../sharedComponents/NavBar';
+import BooleanSection from './components/ChartSection/BooleanSection';
 
 // Functions
 import { useThemeStyles } from '../../styles/useThemeStyles';
 import { useHomepage } from '../Home/helpers/useHomepage';
-
 import { calculatePeriodTypeAndFormatDate } from './helpers/periodCalculation';
 import { navigatePeriod } from './helpers/navigatePeriod';
-import MobileNavbar from '../../sharedComponents/NavBar';
-import BooleanSection from './components/ChartSection/BooleanSection';
+import { 
+  getLocalTimeZone, 
+  parseDate, 
+  formatDate, 
+  getTodayDateString,
+  startOfPeriod
+} from '@los/shared/src/utilities/timezoneBullshit';
 
 let ColorfulTimeline: React.ComponentType<any>;
 let GPTSection: React.ComponentType<any>;
@@ -60,9 +65,16 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 
   const { openHomepage, openCurrentWeek, openToday, openCurrentMonth  } = useHomepage();
 
+  const timeZone = getLocalTimeZone();
   const [dateState, setDateState] = useState(() => {
-    const initialStartDate = new Date(route?.params?.startDate || propStartDate || Date.now());
-    const initialEndDate = new Date(route?.params?.endDate || propEndDate || Date.now());
+    const today = new Date();
+    const initialStartDate = propStartDate 
+      ? parseDate(propStartDate, timeZone) 
+      : startOfPeriod(today, 'week', timeZone);
+    const initialEndDate = propEndDate 
+      ? parseDate(propEndDate, timeZone) 
+      : startOfPeriod(new Date(initialStartDate.getTime() + 6 * 24 * 60 * 60 * 1000), 'day', timeZone);
+    
     const { periodType, formattedDate } = calculatePeriodTypeAndFormatDate(initialStartDate, initialEndDate);
     return { startDate: initialStartDate, endDate: initialEndDate, periodType, formattedDate };
   });
@@ -71,16 +83,16 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
     if (Platform.OS !== 'web') {
       // Mobile logic
       if (route?.params?.startDate && route?.params?.endDate) {
-        const newStartDate = new Date(route.params.startDate);
-        const newEndDate = new Date(route.params.endDate);
+        const newStartDate = parseDate(route.params.startDate, timeZone);
+        const newEndDate = parseDate(route.params.endDate, timeZone);
         const { periodType, formattedDate } = calculatePeriodTypeAndFormatDate(newStartDate, newEndDate);
         setDateState({ startDate: newStartDate, endDate: newEndDate, periodType, formattedDate });
       }
     } else {
       // Desktop logic
       if (propStartDate && propEndDate) {
-        const newStartDate = new Date(propStartDate);
-        const newEndDate = new Date(propEndDate);
+        const newStartDate = parseDate(propStartDate, timeZone);
+        const newEndDate = parseDate(propEndDate, timeZone);
         const { periodType, formattedDate } = calculatePeriodTypeAndFormatDate(newStartDate, newEndDate);
         setDateState({ startDate: newStartDate, endDate: newEndDate, periodType, formattedDate });
       }
@@ -88,8 +100,9 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
   }, [route?.params?.startDate, route?.params?.endDate, propStartDate, propEndDate]);
 
   const handleNavigatePeriod = useCallback((direction: 'previous' | 'next' | 'current') => {
+    const timeZone = getLocalTimeZone();
     setDateState(prevState => {
-      const { newStartDate, newEndDate } = navigatePeriod(direction, prevState.periodType, prevState.startDate, prevState.endDate);
+      const { newStartDate, newEndDate } = navigatePeriod(direction, prevState.periodType, prevState.startDate, prevState.endDate, timeZone);
       const { periodType, formattedDate } = calculatePeriodTypeAndFormatDate(newStartDate, newEndDate);
       return { startDate: newStartDate, endDate: newEndDate, periodType, formattedDate };
     });
@@ -130,6 +143,8 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
         return -1;
     }
   }, [dateState.periodType]);
+
+  console.log('dateState', dateState);
 
   const renderContent = () => {
     try {

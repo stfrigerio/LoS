@@ -10,6 +10,7 @@ import Task from '@los/shared/src/components/Tasks/Tasks';
 
 import { databaseManagers } from '../../database/tables';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
+import { startOfPeriod, formatDate } from '@los/shared/src/utilities/timezoneBullshit';
 
 const RightPanel: React.FC<DrawerContentComponentProps> = (props) => {
     const { themeColors } = useThemeStyles();
@@ -31,14 +32,14 @@ const RightPanel: React.FC<DrawerContentComponentProps> = (props) => {
             case 'Task':
                 return <Task />;
             case 'WeeklyNote':
-                const startOfWeek = new Date(today);
-                startOfWeek.setDate(today.getDate() - today.getDay());
-                const endOfWeek = new Date(today);
-                endOfWeek.setDate(today.getDate() - today.getDay() + 6);
+                const startOfWeek = startOfPeriod(today, 'week');
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+            
                 return (
                     <PeriodicNote
-                        startDate={startOfWeek.toISOString().split('T')[0]}
-                        endDate={endOfWeek.toISOString().split('T')[0]}
+                        startDate={formatDate(startOfWeek, 'yyyy-MM-dd')}
+                        endDate={formatDate(endOfWeek, 'yyyy-MM-dd')}
                     />
                 );
             case 'DailyNote':

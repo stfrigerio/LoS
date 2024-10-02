@@ -11,20 +11,8 @@ import { format } from 'date-fns';
 import { Audio } from 'expo-av';
 
 // Components
-import Homepage from '@los/shared/src/components/Home/Homepage' 
 import LeftPanel from '@los/mobile/src/components/LeftPanel/LeftPanel'
 import RightPanel from '@los/mobile/src/components/RightPanel/RightPanel';
-import DailyNote from '@los/shared/src/components/DailyNote/DailyNote'
-import UserSettings from '@los/shared/src/components/UserSettings/UserSettings'
-import JournalHub from '@los/shared/src/components/Journal/JournalHub'
-import PeriodicNote from '@los/shared/src/components/PeriodicNote/PeriodicNote';
-import LibraryHub from '@los/shared/src/components/Library/LibraryHub';
-import PeopleHub from '@los/shared/src/components/People/People';
-import TasksHub from '@los/shared/src/components/Tasks/Tasks';
-import MoodsHub from '@los/shared/src/components/Mood/Mood';
-import MoneyHub from '@los/shared/src/components/Money/Money';
-import Time from '@los/shared/src/components/Time/Time';
-import MusicPlayer from '@los/mobile/src/components/Music/MusicPlayer';
 
 // Contexts
 import { ChecklistProvider, useChecklist } from './src/components/Contexts/checklistContext';
@@ -75,29 +63,58 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 const MainStackNavigator: React.FC = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false}}>
-    <Stack.Screen name="home" component={Homepage} />
-    <Stack.Screen 
-      name="dailyNote" 
-      component={DailyNote} 
+  // we code split the components, meaning we are not importing all the components at once, but rather on demand
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen
+      name="home"
+      getComponent={() => require('@los/shared/src/components/Home/Homepage').default}
+    />
+    <Stack.Screen
+      name="dailyNote"
+      getComponent={() => require('@los/shared/src/components/DailyNote/DailyNote').default}
       initialParams={{ date: format(new Date(), 'yyyy-MM-dd') }}
     />
-    <Stack.Screen 
-      name="periodicNote" 
-      component={PeriodicNote}
-      options={{
-        headerShown: false,
-      }}
+    <Stack.Screen
+      name="periodicNote"
+      getComponent={() => require('@los/shared/src/components/PeriodicNote/PeriodicNote').default}
+      options={{ headerShown: false }}
     />
-    <Stack.Screen name="settings" component={UserSettings}/>
-    <Stack.Screen name="journalHub" component={JournalHub} />
-    <Stack.Screen name="library" component={LibraryHub} />
-    <Stack.Screen name="people" component={PeopleHub} />
-    <Stack.Screen name="tasks" component={TasksHub} />
-    <Stack.Screen name="moods" component={MoodsHub} />
-    <Stack.Screen name="money" component={MoneyHub} />
-    <Stack.Screen name="time" component={Time} />
-    <Stack.Screen name="music" component={MusicPlayer} />
+    <Stack.Screen
+      name="settings"
+      getComponent={() => require('@los/shared/src/components/UserSettings/UserSettings').default}
+    />
+    <Stack.Screen
+      name="journalHub"
+      getComponent={() => require('@los/shared/src/components/Journal/JournalHub').default}
+    />
+    <Stack.Screen
+      name="library"
+      getComponent={() => require('@los/shared/src/components/Library/LibraryHub').default}
+    />
+    <Stack.Screen
+      name="people"
+      getComponent={() => require('@los/shared/src/components/People/People').default}
+    />
+    <Stack.Screen
+      name="tasks"
+      getComponent={() => require('@los/shared/src/components/Tasks/Tasks').default}
+    />
+    <Stack.Screen
+      name="moods"
+      getComponent={() => require('@los/shared/src/components/Mood/Mood').default}
+    />
+    <Stack.Screen
+      name="money"
+      getComponent={() => require('@los/shared/src/components/Money/Money').default}
+    />
+    <Stack.Screen
+      name="time"
+      getComponent={() => require('@los/shared/src/components/Time/Time').default}
+    />
+    <Stack.Screen
+      name="music"
+      getComponent={() => require('@los/mobile/src/components/Music/MusicPlayer').default}
+    />
   </Stack.Navigator>
 );
 

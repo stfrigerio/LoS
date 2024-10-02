@@ -1,8 +1,31 @@
-import { addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfMonth, endOfMonth, addYears, subYears, startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfDay, startOfWeek, startOfMonth as startOfMonthFn, startOfQuarter as startOfQuarterFn, startOfYear as startOfYearFn } from 'date-fns';
+import {
+  addDays,
+  addWeeks,
+  addMonths,
+  addQuarters,
+  addYears,
+  startOfDay,
+  startOfWeek,
+  startOfMonth,
+  startOfQuarter,
+  startOfYear,
+} from 'date-fns';
+import {
+  getLocalTimeZone,
+  parseDate,
+  formatDate,
+  navigateDate,
+} from '@los/shared/src/utilities/timezoneBullshit';
 
-export const navigatePeriod = (direction: 'previous' | 'next' | 'current', periodType: string, startDate: Date, endDate: Date) => {
-  let newStartDate = new Date(startDate);
-  let newEndDate = new Date(endDate);
+export const navigatePeriod = (
+  direction: 'previous' | 'next' | 'current',
+  periodType: string,
+  startDate: Date,
+  endDate: Date,
+  timeZone?: string
+) => {
+  const tz = timeZone || getLocalTimeZone();
+  let newStartDate: Date, newEndDate: Date;
 
   if (direction === 'current') {
     const today = new Date();
@@ -12,69 +35,51 @@ export const navigatePeriod = (direction: 'previous' | 'next' | 'current', perio
         newEndDate = newStartDate;
         break;
       case 'week':
-        newStartDate = startOfWeek(today);
+        newStartDate = startOfWeek(today, { weekStartsOn: 1 });
         newEndDate = addDays(newStartDate, 6);
         break;
       case 'month':
-        newStartDate = startOfMonthFn(today);
-        newEndDate = endOfMonth(newStartDate);
+        newStartDate = startOfMonth(today);
+        newEndDate = addDays(addMonths(newStartDate, 1), -1);
         break;
       case 'quarter':
-        newStartDate = startOfQuarterFn(today);
-        newEndDate = endOfQuarter(newStartDate);
+        newStartDate = startOfQuarter(today);
+        newEndDate = addDays(addQuarters(newStartDate, 1), -1);
         break;
       case 'year':
-        newStartDate = startOfYearFn(today);
-        newEndDate = endOfYear(newStartDate);
+        newStartDate = startOfYear(today);
+        newEndDate = addDays(addYears(newStartDate, 1), -1);
         break;
+      default:
+        newStartDate = startDate;
+        newEndDate = endDate;
     }
   } else {
+    const offset = direction === 'previous' ? -1 : 1;
     switch (periodType) {
       case 'day':
-        if (direction === 'previous') {
-          newStartDate = subDays(newStartDate, 1);
-          newEndDate = newStartDate;
-        } else if (direction === 'next') {
-          newStartDate = addDays(newStartDate, 1);
-          newEndDate = newStartDate;
-        }
+        newStartDate = navigateDate(startDate, offset, tz);
+        newEndDate = newStartDate;
         break;
       case 'week':
-        if (direction === 'previous') {
-          newStartDate = subWeeks(newStartDate, 1);
-          newEndDate = addDays(newStartDate, 6);
-        } else if (direction === 'next') {
-          newStartDate = addWeeks(newStartDate, 1);
-          newEndDate = addDays(newStartDate, 6);
-        }
+        newStartDate = addWeeks(startDate, offset);
+        newEndDate = addDays(newStartDate, 6);
         break;
       case 'month':
-        if (direction === 'previous') {
-          newStartDate = subMonths(newStartDate, 1);
-        } else if (direction === 'next') {
-          newStartDate = addMonths(newStartDate, 1);
-        }
-        newStartDate = startOfMonth(newStartDate);
-        newEndDate = endOfMonth(newStartDate);
+        newStartDate = addMonths(startDate, offset);
+        newEndDate = addDays(addMonths(newStartDate, 1), -1);
         break;
       case 'quarter':
-        if (direction === 'previous') {
-          newStartDate = subMonths(newStartDate, 3);
-        } else if (direction === 'next') {
-          newStartDate = addMonths(newStartDate, 3);
-        }
-        newStartDate = startOfQuarter(newStartDate);
-        newEndDate = endOfQuarter(newStartDate);
+        newStartDate = addQuarters(startDate, offset);
+        newEndDate = addDays(addQuarters(newStartDate, 1), -1);
         break;
       case 'year':
-        if (direction === 'previous') {
-          newStartDate = subYears(newStartDate, 1);
-        } else if (direction === 'next') {
-          newStartDate = addYears(newStartDate, 1);
-        }
-        newStartDate = startOfYear(newStartDate);
-        newEndDate = endOfYear(newStartDate);
+        newStartDate = addYears(startDate, offset);
+        newEndDate = addDays(addYears(newStartDate, 1), -1);
         break;
+      default:
+        newStartDate = startDate;
+        newEndDate = endDate;
     }
   }
 

@@ -66,6 +66,15 @@ const DailyTasks: React.FC<DailyTasksProps> = ({ tasks, onToggleTaskCompletion, 
         return null;
     }
 
+    const handleDeleteTask = async (uuid: string) => {
+        try {
+            await deleteTask(uuid);
+            setLocalTasks(prevTasks => prevTasks.filter(task => task.uuid !== uuid));
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>🎯 Tasks of Today</Text>
@@ -97,7 +106,7 @@ const DailyTasks: React.FC<DailyTasksProps> = ({ tasks, onToggleTaskCompletion, 
                                 <View style={[styles.deleteIcon, { marginRight: 15 }]} />
                             )
                         }
-                        <Pressable onPress={() => deleteTask(task.uuid!)} style={styles.deleteIcon}>
+                        <Pressable onPress={() => handleDeleteTask(task.uuid!)} style={styles.deleteIcon}>
                             <FontAwesomeIcon icon={faTrash} color={'gray'} size={15} />
                         </Pressable> 
                     </View>

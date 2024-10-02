@@ -1,19 +1,25 @@
 import { 
-    format, 
-    parseISO, 
     differenceInCalendarDays, 
     differenceInCalendarMonths, 
     differenceInCalendarQuarters, 
-    differenceInCalendarYears 
+    differenceInCalendarYears,
+    getISOWeek,
+    getYear,
 } from 'date-fns';
+import {
+    parseDate,
+    formatDate,
+    getLocalTimeZone
+} from '@los/shared/src/utilities/timezoneBullshit';
 
 export const calculatePeriodTypeAndFormatDate = (startDate: string | Date, endDate: string | Date) => {
     let periodType;
     let formattedDate;
 
     try {
-        const start = startDate instanceof Date ? startDate : parseISO(startDate);
-        const end = endDate instanceof Date ? endDate : parseISO(endDate);
+        const timeZone = getLocalTimeZone();
+        const start = startDate instanceof Date ? startDate : parseDate(startDate, timeZone);
+        const end = endDate instanceof Date ? endDate : parseDate(endDate, timeZone);
 
         // Determine the period type based on the range
         if (differenceInCalendarDays(end, start) <= 7) {
@@ -31,17 +37,19 @@ export const calculatePeriodTypeAndFormatDate = (startDate: string | Date, endDa
         // Format the current date based on the period type
         switch (periodType) {
             case 'week':
-                formattedDate = format(start, 'yyyy-') + 'W' + format(start, 'II');
+                const weekNumber = getISOWeek(start);
+                const year = getYear(start);
+                formattedDate = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
                 break;
             case 'month':
-                formattedDate = format(start, 'yyyy-MM');
+                formattedDate = formatDate(start, 'yyyy-MM', timeZone);
                 break;
             case 'quarter':
                 const quarter = Math.ceil((start.getMonth() + 1) / 3);
-                formattedDate = `${format(start, 'yyyy')}-Q${quarter}`;
+                formattedDate = `${formatDate(start, 'yyyy', timeZone)}-Q${quarter}`;
                 break;
             case 'year':
-                formattedDate = format(start, 'yyyy');
+                formattedDate = formatDate(start, 'yyyy', timeZone);
                 break;
             default:
                 formattedDate = 'Unknown Period';
