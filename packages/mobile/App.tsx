@@ -25,7 +25,6 @@ import MoodsHub from '@los/shared/src/components/Mood/Mood';
 import MoneyHub from '@los/shared/src/components/Money/Money';
 import Time from '@los/shared/src/components/Time/Time';
 import MusicPlayer from '@los/mobile/src/components/Music/MusicPlayer';
-import ErrorBoundary from '@los/mobile/src/ErrorBoundary';
 
 // Contexts
 import { ChecklistProvider, useChecklist } from './src/components/Contexts/checklistContext';
@@ -38,7 +37,8 @@ import { useTheme, ThemeProvider } from '../shared/src/styles/ThemeContext';
 import { lightNavigationTheme, darkNavigationTheme } from '../shared/src/styles/theme';
 import { InitializeDatabasesWrapper } from './src/database/databaseInitializer';
 import checkAndAddRepeatingTasks from '@los/mobile/src/components/Tasks/hooks/repeatedTaskInit';
-import { checkTasksDueToday, setNotificationsForDueTasks, syncNotificationsWithTasks } from '@los/mobile/src/components/Tasks/hooks/tasksNotification'; // Add this import
+import { checkTasksDueToday, setNotificationsForDueTasks, syncNotificationsWithTasks } from '@los/mobile/src/components/Tasks/hooks/tasksNotification';
+import globalErrorHandler from './src/components/errorHandler';
 
 import { 
   setGlobalNotificationHandler, 
@@ -216,6 +216,8 @@ function MainApp() {
     playThroughEarpieceAndroid: false,
   });
 
+  ErrorUtils.setGlobalHandler(globalErrorHandler);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
         <NavigationContainer theme={appTheme}>
@@ -233,10 +235,8 @@ export default function App() {
         <NavbarDrawerProvider>
           <ChecklistProvider>
             <MusicPlayerProvider>
-              <ErrorBoundary>
-                <InitializeDatabasesWrapper />
-                <MainApp />
-              </ErrorBoundary>
+              <InitializeDatabasesWrapper />
+              <MainApp />
             </MusicPlayerProvider>
           </ChecklistProvider>
         </NavbarDrawerProvider>

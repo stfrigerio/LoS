@@ -3,7 +3,7 @@ import { Pressable, View, Text, StyleSheet, Platform } from 'react-native';
 import { format } from 'date-fns';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus, faChevronLeft, faChevronRight, faCalendarDay, faCalendarWeek } from '@fortawesome/free-solid-svg-icons';
-import { subDays, addDays } from 'date-fns';
+import { parseISO, startOfDay,subDays, addDays } from 'date-fns';
 
 import AlertModal from '@los/shared/src/components/modals/AlertModal';
 import { UniversalModal } from '@los/shared/src/sharedComponents/UniversalModal';
@@ -50,7 +50,7 @@ const ViewTaskModal: React.FC<TaskModalProps> = ({
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
     const [showTaskModal, setShowTaskModal] = useState(false);
 
-    const [currentDate, setCurrentDate] = useState(new Date(initialDate));
+    const [currentDate, setCurrentDate] = useState(() => startOfDay(parseISO(initialDate)));
     const [checklistItems, setChecklistItems] = useState<ExtendedTaskData[]>([]);
     const [birthdayDetails, setBirthdayDetails] = useState({ isBirthday: false, name: "", age: null as number | null });
     const [selectedTask, setSelectedTask] = useState<ExtendedTaskData | null>(null);

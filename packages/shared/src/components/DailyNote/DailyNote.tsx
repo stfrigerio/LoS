@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ScrollView, View, StyleSheet, Platform, Dimensions } from 'react-native';
 import { formatInTimeZone, toDate } from 'date-fns-tz';
-import { startOfToday } from 'date-fns';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { startOfToday, parseISO, startOfDay } from 'date-fns';
+import { RouteProp } from '@react-navigation/native';
 
 import {
   Quote,
@@ -24,7 +24,7 @@ import ImagePickerComponent from './components/ImagePickerComponent';
 import { RootStackParamList } from '@los/mobile/App';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 import { navigatePeriod } from '../PeriodicNote/helpers/navigatePeriod';
-import { useHomepage } from '../Home/helpers/useHomepage';
+import { getStartOfToday, parseDate, formatDate, getLocalTimeZone, navigateDate } from '@los/shared/src/utilities/timezoneBullshit';
 
 // Types
 import { UseDailyDataType } from './types/DailyData';
@@ -62,19 +62,27 @@ const DailyNote: React.FC<DailyNoteProps> = ({ route, date: propDate }) => {
   if (!route) {
     return null;
   }
-  
-  const [currentDate, setCurrentDate] = useState(() => {
-    const initialDate = route?.params?.date || propDate || new Date().toISOString().split('T')[0];
-    return new Date(initialDate);
+  const timeZone = getLocalTimeZone();
+
+  // Initialize currentDate
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
+    if (route?.params?.date) {
+      return parseDate(route.params.date, timeZone);
+    } else if (propDate) {
+      return typeof propDate === 'string' ? parseDate(propDate, timeZone) : propDate;
+    } else {
+      return getStartOfToday(timeZone);
+    }
   });
+
+
+
+  // Format date strings
+  const dateStr = formatDate(currentDate, 'yyyy-MM-dd', timeZone);
+  const title = formatDate(currentDate, 'EEEE, dd MMMM', timeZone);
 
   const [lastSubmissionTime, setLastSubmissionTime] = useState(Date.now());
   const [tasks, setTasks] = useState<TaskData[]>([]);
-
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const localDate = toDate(currentDate, { timeZone });
-  const dateStr = formatInTimeZone(localDate, timeZone, 'yyyy-MM-dd');
-  const title = format(currentDate, 'EEEE, dd MMMM');
 
   const { dailyData, onUpdateDaySections } = useDailyData(currentDate, lastSubmissionTime);
   const { toggleTaskCompletion, getTasksDueOnDate: fetchDailyTasks } = useTaskData();
@@ -83,10 +91,11 @@ const DailyNote: React.FC<DailyNoteProps> = ({ route, date: propDate }) => {
   const { themeColors } = useThemeStyles();
   const styles = getStyles(themeColors);
 
+  // Update currentDate when route or propDate changes
   useEffect(() => {
     const newDate = route?.params?.date || propDate;
     if (newDate) {
-      setCurrentDate(new Date(newDate));
+      setCurrentDate(typeof newDate === 'string' ? parseDate(newDate, timeZone) : newDate);
     }
   }, [route?.params?.date, propDate]);
 
@@ -112,12 +121,14 @@ const DailyNote: React.FC<DailyNoteProps> = ({ route, date: propDate }) => {
     fetchTasks();
   }, [currentDate]);
 
+  // Handle date navigation
   const handleNavigatePeriod = (direction: 'previous' | 'next' | 'current') => {
     if (direction === 'current') {
-      setCurrentDate(startOfToday());
+      setCurrentDate(getStartOfToday(timeZone));
     } else {
-      const { newStartDate } = navigatePeriod(direction, 'day', currentDate, currentDate);
-      setCurrentDate(newStartDate);
+      const offset = direction === 'previous' ? -1 : 1;
+      const newDate = navigateDate(currentDate, offset, timeZone);
+      setCurrentDate(newDate);
     }
   };
 
@@ -129,8 +140,8 @@ const DailyNote: React.FC<DailyNoteProps> = ({ route, date: propDate }) => {
           <DateHeader formattedDate={title} periodType='day' />
           <View style={styles.navigation}>
             <TimeBox 
-              startDate={dateStr!} 
-              endDate={dateStr!} 
+              startDate={dateStr} 
+              endDate={dateStr} 
               currentViewType={'daily'}
             />
             <DateNavigation 
