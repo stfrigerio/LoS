@@ -89,7 +89,7 @@ export async function getByImdbId(id: string): Promise<LibraryData | null> {
         cast: res.Actors,
         writer: res.Writer,
         metascore: res.Metascore !== 'N/A' ? res.Metascore : null,
-        ratingImdb: parseFloat(res.imdbRating),
+        ratingImdb: res.imdbRating === 'N/A' ? undefined : parseFloat(res.imdbRating),
         tomato: extractTomatoRating(res.Ratings),
         runtime: res.Runtime,
         awards: res.Awards,
@@ -109,7 +109,6 @@ function extractTomatoRating(ratings: Rating[]): number | undefined {
     }
     return undefined; // Return undefined instead of null
 }
-
 
 async function apiGet(params: Record<string, string | undefined>): Promise<OmdbSearchResult | any> {
     let finalURL = new URL(API_URL);
