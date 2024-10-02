@@ -60,4 +60,5 @@ LoS_Database/
 LoSTest_Database/
 DatabaseMigration/
 musicLibrary/
+imageLibrary/
 *.pyc
