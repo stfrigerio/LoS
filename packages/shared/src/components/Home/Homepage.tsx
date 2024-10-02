@@ -2,7 +2,7 @@ import React, { FC, useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, ImageBackground, ScrollView, Platform, Animated, Dimensions } from 'react-native';
 import  { format } from 'date-fns';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCog } from '@fortawesome/free-solid-svg-icons';
+import { faCog, faBook, faCommentDots, faJournalWhills, faCircleCheck, faUser, faMoneyBill } from '@fortawesome/free-solid-svg-icons';
 
 import { getWeekNumber } from '@los/shared/src/utilities/timeUtils';
 import { useHomepage } from './helpers/useHomepage';
@@ -32,7 +32,7 @@ const Homepage: FC = () => {
     const styles = getStyles(themeColors);
     const calendarKey = theme;
     const today = new Date().toString();
-    const todayFormatted = format(today, 'EEEE, dd MMMM');
+    const todayFormatted = format(today, 'dd EEEE');
 
     const [isQuickButtonExpanded, setIsQuickButtonExpanded] = useState(false);
     const settingsSlideAnim = useRef(new Animated.Value(0)).current;
@@ -120,7 +120,7 @@ const Homepage: FC = () => {
                     <View style={styles.buttonContainers}>
                         {Platform.OS !== 'web' ? (
                             <Pressable style={styles.databaseButton} onPress={openToday}>
-                                <Text style={styles.buttonText}>{todayFormatted} 🌞</Text>
+                                <Text style={styles.buttonText}>{todayFormatted}</Text>
                             </Pressable>
                         ) : (
                             <Pressable style={styles.databaseButton} onPress={openCurrentWeek}>
@@ -131,32 +131,32 @@ const Homepage: FC = () => {
                             <View style={styles.notesNavigation}>
                                 {shouldShow(homepageSettings.HidePeople) && (
                                     <Pressable style={styles.button} onPress={() => openPeople()}>
-                                        <Text style={styles.buttonText}>People 👤</Text>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faUser} size={20} color={themeColors.borderColor} />
                                     </Pressable>
                                 )}
                                 {shouldShow(homepageSettings.HideTasks) && (
                                     <Pressable style={styles.button} onPress={() => openTasks()}>
-                                        <Text style={styles.buttonText}>Tasks ✅</Text>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faCircleCheck} size={20} color={themeColors.borderColor} />
                                     </Pressable>
                                 )}
                                 {shouldShow(homepageSettings.HideJournal) && (
                                     <Pressable style={styles.button} onPress={openJournalHub}>
-                                        <Text style={styles.buttonText}>Journal 📝</Text>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faJournalWhills} size={20} color={themeColors.borderColor} />
                                     </Pressable>
                                 )}
                                 {shouldShow(homepageSettings.HideMoods) && (
                                     <Pressable style={styles.button} onPress={() => openMoods()}>
-                                        <Text style={styles.buttonText}>Moods 💭</Text>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faCommentDots} size={20} color={themeColors.borderColor} />
                                     </Pressable>
                                 )}
                                 {shouldShow(homepageSettings.HideLibrary) && (
                                     <Pressable style={styles.button} onPress={openLibrary}>
-                                        <Text style={styles.buttonText}>Library 📚</Text>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faBook} size={20} color={themeColors.borderColor} />
                                     </Pressable>
                                 )}
                                 {shouldShow(homepageSettings.HideMoney) && (
                                     <Pressable style={styles.button} onPress={() => openMoney()}>
-                                        <Text style={styles.buttonText}>Money 💸</Text>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faMoneyBill} size={20} color={themeColors.borderColor} />
                                     </Pressable>
                                 )}
                             </View>
@@ -247,6 +247,7 @@ const getStyles = (theme: any) => {
             borderWidth: 2,
             borderColor: theme.borderColor,
             borderRadius: 10,
+            alignItems: 'center',
         },
         databaseButton: {
             margin: 10,
@@ -258,7 +259,7 @@ const getStyles = (theme: any) => {
         },
         buttonText: {
             color: theme.textColor,
-            textAlign: 'center'
+            textAlign: 'center',
         },
         quickButtonContainer: {
             flexDirection: 'row',

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, Alert, BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import * as BackgroundFetch from 'expo-background-fetch';
-import * as TaskManager from 'expo-task-manager';
+// import * as BackgroundFetch from 'expo-background-fetch';
+// import * as TaskManager from 'expo-task-manager';
 import * as FileSystem from 'expo-file-system';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -12,12 +12,12 @@ import MusicPlayerControls from './components/MusicPlayerControls';
 import { useMusicPlayer } from './contexts/MusicPlayerContext';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 
-const BACKGROUND_FETCH_TASK = 'background-fetch';
+// const BACKGROUND_FETCH_TASK = 'background-fetch';
 
-TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-    // This is where you can update playback status, sync new songs, etc.
-    return BackgroundFetch.BackgroundFetchResult.NewData;
-});
+// TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+//     // This is where you can update playback status, sync new songs, etc.
+//     return BackgroundFetch.BackgroundFetchResult.NewData;
+// });
 
 interface Album {
     name: string;
@@ -34,7 +34,7 @@ const MusicPlayer = () => {
     const styles = getStyles(themeColors);
 
     useEffect(() => {
-        registerBackgroundFetch();
+        // registerBackgroundFetch();
         loadAlbums();
     }, []);
 
@@ -56,17 +56,17 @@ const MusicPlayer = () => {
         }, [selectedAlbum])
     )
 
-    const registerBackgroundFetch = async () => {
-        try {
-        await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-            minimumInterval: 60 * 15, // 15 minutes
-            stopOnTerminate: false,
-            startOnBoot: true,
-        });
-        } catch (err) {
-            console.log('Background fetch failed to register:', err);
-        }
-    };
+    // const registerBackgroundFetch = async () => {
+    //     try {
+    //     await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+    //         minimumInterval: 60 * 15, // 15 minutes
+    //         stopOnTerminate: false,
+    //         startOnBoot: true,
+    //     });
+    //     } catch (err) {
+    //         console.log('Background fetch failed to register:', err);
+    //     }
+    // };
 
     const loadAlbums = async () => {
         const musicDir = `${FileSystem.documentDirectory}Music`;
