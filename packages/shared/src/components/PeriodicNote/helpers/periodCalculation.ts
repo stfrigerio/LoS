@@ -1,67 +1,98 @@
+// main.ts
 import { 
+    parseISO, 
     differenceInCalendarDays, 
-    differenceInCalendarMonths, 
-    differenceInCalendarQuarters, 
-    differenceInCalendarYears
+    isSameMonth, 
+    isSameQuarter, 
+    isSameYear,
 } from 'date-fns';
-import {
-    parseDate,
-    parseDateUTC, // Ensure this function exists as per previous instructions
-    formatDate,
-    getLocalTimeZone,
-    getUTCISOWeekNumber,
-    getUTCISOWeekYear
-} from '@los/shared/src/utilities/timezoneBullshit';
 
-export const calculatePeriodTypeAndFormatDate = (startDate: string | Date, endDate: string | Date) => {
+import { getUTCISOWeekNumber, getUTCISOWeekYear } from '../../../utilities/timezoneBullshit';
+
+// Function to parse dates in UTC
+export const parseDateUTC = (dateString: string): Date => {
+    if (!dateString.endsWith('Z') && !/[+\-]\d{2}:\d{2}$/.test(dateString)) {
+        dateString += 'Z'; // Append 'Z' to enforce UTC
+    }
+    return parseISO(dateString);
+};
+
+// Comprehensive function with hierarchical period checks
+export const calculatePeriodTypeAndFormatDate = (
+    startDate: string | Date, 
+    endDate: string | Date
+) => {
     let periodType: string;
     let formattedDate: string;
 
     try {
-        const timeZone = getLocalTimeZone();
-        
-        // Parse dates normally
-        const start = startDate instanceof Date ? startDate : parseDate(startDate, timeZone);
-        const end = endDate instanceof Date ? endDate : parseDate(endDate, timeZone);
+        // Parse dates in UTC
+        const startUTC = startDate instanceof Date ? startDate : parseDateUTC(startDate as string);
+        const endUTC = endDate instanceof Date ? endDate : parseDateUTC(endDate as string);
 
-        // Calculate the difference in days
-        const daysDifference = differenceInCalendarDays(end, start);
+        // Calculate difference in days
+        const daysDifference = differenceInCalendarDays(endUTC, startUTC);
 
-        // Determine the period type based on the range
-        if (daysDifference === 7) {
-            periodType = 'week';
-        } else if (daysDifference <= 31 && daysDifference > 7) {
-            periodType = 'month';
-        } else if (differenceInCalendarQuarters(end, start) === 0) {
-            periodType = 'quarter';
-        } else if (differenceInCalendarYears(end, start) === 0) {
-            periodType = 'year';
-        } else {
-            periodType = 'unknown';
+        if (daysDifference < 0) {
+            throw new Error('End date must be after start date');
         }
 
-        // Format the current date based on the period type
-        switch (periodType) {
-            case 'week':
-                // Parse the startDate in UTC without shifting to local time
-                const startUTC = startDate instanceof Date ? startDate : parseDateUTC(startDate as string);
-                const weekNumber = getUTCISOWeekNumber(startUTC);
-                const isoYear = getUTCISOWeekYear(startUTC);
-                formattedDate = `${isoYear}-W${weekNumber.toString().padStart(2, '0')}`;
-                break;
-            case 'month':
-                formattedDate = formatDate(start, 'yyyy-MM', timeZone);
-                break;
-            case 'quarter':
-                const quarter = Math.ceil((start.getMonth() + 1) / 3);
-                formattedDate = `${formatDate(start, 'yyyy', timeZone)}-Q${quarter}`;
-                break;
-            case 'year':
-                formattedDate = formatDate(start, 'yyyy', timeZone);
-                break;
-            default:
-                formattedDate = 'Unknown Period';
-                break;
+        // Get ISO week and year using UTC-based functions
+        const startWeek = getUTCISOWeekNumber(startUTC);
+        const endWeek = getUTCISOWeekNumber(endUTC);
+        const startWeekYear = getUTCISOWeekYear(startUTC);
+        const endWeekYear = getUTCISOWeekYear(endUTC);
+
+        // Hierarchical Checks: Week > Month > Quarter > Year > Unknown
+        if (startWeek === endWeek && startWeekYear === endWeekYear) {
+            // Same ISO Week
+            periodType = 'week';
+            formattedDate = `${startWeekYear}-W${startWeek.toString().padStart(2, '0')}`;
+        }
+        else if (isSameMonth(startUTC, endUTC)) {
+            // Same Month
+            const startYear = startUTC.getUTCFullYear();
+            const startMonth = (startUTC.getUTCMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+            periodType = 'month';
+            formattedDate = `${startYear}-${startMonth}`;
+        }
+        else if (isSameQuarter(startUTC, endUTC)) {
+            // Same Quarter
+            const startYear = startUTC.getUTCFullYear();
+            const startQuarter = Math.ceil((startUTC.getUTCMonth() + 1) / 3);
+            periodType = 'quarter';
+            formattedDate = `${startYear}-Q${startQuarter}`;
+        }
+        else if (isSameYear(startUTC, endUTC)) {
+            // Same Year
+            const startYear = startUTC.getUTCFullYear();
+            periodType = 'year';
+            formattedDate = `${startYear}`;
+        }
+        else {
+            // Different Years - Decide on fallback logic
+            // For this example, we'll categorize based on daysDifference
+            if (daysDifference <= 7) {
+                periodType = 'week';
+                formattedDate = `${startWeekYear}-W${startWeek.toString().padStart(2, '0')}`;
+            }
+            else if (daysDifference <= 31) {
+                periodType = 'month';
+                const startYear = startUTC.getUTCFullYear();
+                const startMonth = (startUTC.getUTCMonth() + 1).toString().padStart(2, '0');
+                formattedDate = `${startYear}-${startMonth}`;
+            }
+            else if (daysDifference <= 90) {
+                periodType = 'quarter';
+                const startYear = startUTC.getUTCFullYear();
+                const startQuarter = Math.ceil((startUTC.getUTCMonth() + 1) / 3);
+                formattedDate = `${startYear}-Q${startQuarter}`;
+            }
+            else {
+                periodType = 'year';
+                const startYear = startUTC.getUTCFullYear();
+                formattedDate = `${startYear}`;
+            }
         }
     } catch (error) {
         console.error('Error parsing date:', error);

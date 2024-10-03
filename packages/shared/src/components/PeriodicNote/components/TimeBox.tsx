@@ -53,6 +53,7 @@ const TimeBox: React.FC<TimeBoxProps> = ({ startDate, endDate, currentViewType }
     const isCurrentDay = useMemo(() => isSamePeriod(noteStartDate, today, 'day', timeZone), [noteStartDate, today, timeZone]);
 
     const handleOpenNote = (period: NotePeriod) => {
+		console.log('startDate', startDate);
         openNote(period, startDate);
     };
 

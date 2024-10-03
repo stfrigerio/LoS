@@ -156,4 +156,3 @@ export const getUTCISOWeekYear = (date: Date): number => {
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     return d.getUTCFullYear();
 };
-

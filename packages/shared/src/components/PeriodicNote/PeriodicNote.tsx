@@ -87,7 +87,9 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 		const timeZone = getLocalTimeZone();
 		setDateState(prevState => {
 			const { newStartDate, newEndDate } = navigatePeriod(direction, prevState.periodType, prevState.startDate, prevState.endDate, timeZone);
+			console.log('recievd dates from navigatePeriod', newStartDate, newEndDate);
 			const { periodType, formattedDate } = calculatePeriodTypeAndFormatDate(newStartDate, newEndDate);
+			console.log('recieved data from calculatePeriodTypeAndFormatDate', periodType, formattedDate);
 			return { startDate: newStartDate, endDate: newEndDate, periodType, formattedDate };
 		});
 	}, []);

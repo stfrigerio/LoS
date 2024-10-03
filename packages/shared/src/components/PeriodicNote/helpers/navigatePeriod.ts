@@ -27,6 +27,8 @@ export const navigatePeriod = (
   const tz = timeZone || getLocalTimeZone();
   let newStartDate: Date, newEndDate: Date;
 
+  console.log('navigatePeriod', { direction, periodType, startDate, endDate, timeZone });
+
   if (direction === 'current') {
     const today = new Date();
     switch (periodType) {
@@ -82,6 +84,8 @@ export const navigatePeriod = (
         newEndDate = endDate;
     }
   }
+
+  console.log('newDates', { newStartDate, newEndDate });
 
   return { newStartDate, newEndDate };
 };
