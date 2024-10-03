@@ -2,33 +2,39 @@ import {
     differenceInCalendarDays, 
     differenceInCalendarMonths, 
     differenceInCalendarQuarters, 
-    differenceInCalendarYears,
-    getISOWeek,
-    getYear,
+    differenceInCalendarYears
 } from 'date-fns';
 import {
     parseDate,
+    parseDateUTC, // Ensure this function exists as per previous instructions
     formatDate,
-    getLocalTimeZone
+    getLocalTimeZone,
+    getUTCISOWeekNumber,
+    getUTCISOWeekYear
 } from '@los/shared/src/utilities/timezoneBullshit';
 
 export const calculatePeriodTypeAndFormatDate = (startDate: string | Date, endDate: string | Date) => {
-    let periodType;
-    let formattedDate;
+    let periodType: string;
+    let formattedDate: string;
 
     try {
         const timeZone = getLocalTimeZone();
+        
+        // Parse dates normally
         const start = startDate instanceof Date ? startDate : parseDate(startDate, timeZone);
         const end = endDate instanceof Date ? endDate : parseDate(endDate, timeZone);
 
+        // Calculate the difference in days
+        const daysDifference = differenceInCalendarDays(end, start);
+
         // Determine the period type based on the range
-        if (differenceInCalendarDays(end, start) <= 7) {
+        if (daysDifference === 7) {
             periodType = 'week';
-        } else if (differenceInCalendarMonths(end, start) < 2) {
+        } else if (daysDifference <= 31 && daysDifference > 7) {
             periodType = 'month';
-        } else if (differenceInCalendarQuarters(end, start) < 2) {
+        } else if (differenceInCalendarQuarters(end, start) === 0) {
             periodType = 'quarter';
-        } else if (differenceInCalendarYears(end, start) < 2) {
+        } else if (differenceInCalendarYears(end, start) === 0) {
             periodType = 'year';
         } else {
             periodType = 'unknown';
@@ -37,9 +43,11 @@ export const calculatePeriodTypeAndFormatDate = (startDate: string | Date, endDa
         // Format the current date based on the period type
         switch (periodType) {
             case 'week':
-                const weekNumber = getISOWeek(start);
-                const year = getYear(start);
-                formattedDate = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+                // Parse the startDate in UTC without shifting to local time
+                const startUTC = startDate instanceof Date ? startDate : parseDateUTC(startDate as string);
+                const weekNumber = getUTCISOWeekNumber(startUTC);
+                const isoYear = getUTCISOWeekYear(startUTC);
+                formattedDate = `${isoYear}-W${weekNumber.toString().padStart(2, '0')}`;
                 break;
             case 'month':
                 formattedDate = formatDate(start, 'yyyy-MM', timeZone);

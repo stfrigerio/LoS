@@ -1,6 +1,9 @@
-// dateUtils.ts
-
-import { parseISO, format, startOfDay, addDays, startOfWeek, startOfMonth, startOfQuarter, startOfYear, isEqual } from 'date-fns';
+import { 
+    parseISO, startOfDay, 
+    addDays, startOfWeek, 
+    startOfMonth, startOfQuarter, 
+    startOfYear, isEqual
+} from 'date-fns';
 import { format as tzFormat, toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 /**
@@ -118,3 +121,39 @@ export const isSamePeriod = (dateLeft: Date, dateRight: Date, period: 'day' | 'w
     const startDateRight = startOfPeriod(dateRight, period, timeZone);
     return isEqual(startDateLeft, startDateRight);
 };
+
+/**
+ * Parse a date string in ISO format to a Date object in UTC without shifting to local time.
+ * @param dateString - The date string to parse.
+ */
+export const parseDateUTC = (dateString: string): Date => {
+    return parseISO(dateString); // Parses the date as UTC without shifting
+};
+
+/**
+ * Calculate the ISO week number based on UTC date.
+ * @param date - The Date object in UTC.
+ * @returns { number } - The ISO week number.
+ */
+export const getUTCISOWeekNumber = (date: Date): number => {
+    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dayNum = d.getUTCDay() || 7; // Sunday is 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return weekNo;
+};
+
+/**
+ * Get the ISO week-numbering year based on UTC date.
+ * This is necessary because the ISO week-numbering year can differ from the calendar year.
+ * @param date - The Date object in UTC.
+ * @returns { number } - The ISO week-numbering year.
+ */
+export const getUTCISOWeekYear = (date: Date): number => {
+    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dayNum = d.getUTCDay() || 7; // Sunday is 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    return d.getUTCFullYear();
+};
+

@@ -156,8 +156,8 @@ const QuantifiableHabitsChart: React.FC<QuantifiableHabitsChartProps> = ({
         activeHabits={activeHabits}
       />
       {chartDimensions ? (
-        <Svg width={width} height={height + 5}>
-          <G transform={`translate(${margin.left + 10},${margin.top})`}>    
+        <Svg width={width} height={height}>
+          <G transform={`translate(${margin.left}, ${margin.top})`}>    
             {Object.entries(paths).map(([habit, d]) => {
               const color = getColor(habit);
               return (

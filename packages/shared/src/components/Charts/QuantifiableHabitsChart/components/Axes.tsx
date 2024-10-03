@@ -75,25 +75,13 @@ const Axes: React.FC<AxesProps> = ({ x, y, width, height, theme, viewType, data 
 
   const yAxisTicks = y.ticks(5).filter(tick => Number.isInteger(tick));
 
-  //^ manual fix for some offset in the daily view when we are in week
-  const calculateOffset = () => {
-    if (data.dates.length < 8) {
-      if (limitedTicks.length > 1) {
-        return (x(limitedTicks[1]) - x(limitedTicks[0])) / 12;
-      }
-    }
-    return 0.5; //^ i dunno, maybe im crazy
-  };
-
-  const offset = calculateOffset();
-
   return (
     <>
       {/* X Axis */}
       <G transform={`translate(0, ${height})`}>
         <Line x2={width} stroke={theme.borderColor} />
         {limitedTicks.map((tick, i) => (
-          <G key={i} transform={`translate(${x(tick) - offset}, 0)`}> 
+          <G key={i} transform={`translate(${x(tick)}, 0)`}> 
             <Line y2={6} stroke={theme.borderColor} />
             <SvgText y={9} dy=".71em" textAnchor="middle" fill={theme.textColor} fontSize={10}>
               {getXAxisFormat()(tick)}

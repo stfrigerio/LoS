@@ -3,8 +3,11 @@ import { Platform } from 'react-native';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, subWeeks, startOfDay, endOfDay } from 'date-fns';
 import { toZonedTime, format } from 'date-fns-tz';
 
+import { formatDate, parseDate, startOfPeriod, getLocalTimeZone } from '@los/shared/src/utilities/timezoneBullshit';
+
 let useNavigateFunc: () => (route: string, params?: any) => void;
 let useHomepageSettings
+
 if (Platform.OS === 'web') {
   const { useNavigate } = require('react-router-dom');
   useNavigateFunc = () => {
@@ -46,12 +49,11 @@ export const useHomepage = () => {
   const navigate = useCustomNavigation();
 
   const openNote = useCallback((period: NotePeriod, date: string) => {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const parsedDate = new Date(date);
+    const timeZone = getLocalTimeZone(); // Use the utility function to get the timezone
+    const parsedDate = parseDate(date, timeZone); // Use the utility function to parse the date
 
     if (period === 'day') {
-      const parsedDate = new Date(date);
-      const formattedDate = format(parsedDate, 'yyyy-MM-dd', { timeZone });
+      const formattedDate = formatDate(parsedDate, 'yyyy-MM-dd', timeZone); // Use the utility function to format the date
       navigate('dailyNote', { date: formattedDate });
       return;
     }
@@ -60,39 +62,36 @@ export const useHomepage = () => {
 
     switch (period) {
       case 'week':
-        start = startOfWeek(parsedDate, { weekStartsOn: 1 });
-        end = endOfWeek(parsedDate, { weekStartsOn: 1 });
-        break;
       case 'lastWeek':
-        const lastWeek = subWeeks(parsedDate, 1);
-        start = startOfWeek(lastWeek, { weekStartsOn: 1 });
-        end = endOfWeek(lastWeek, { weekStartsOn: 1 });
-        break;
       case 'month':
-        start = startOfMonth(parsedDate);
-        end = endOfMonth(parsedDate);
-        break;
       case 'quarter':
-        start = startOfQuarter(parsedDate);
-        end = endOfQuarter(parsedDate);
-        break;
       case 'year':
-        start = startOfYear(parsedDate);
-        end = endOfYear(parsedDate);
-        break;
       case 'allYears':
-        start = new Date('2023-01-01T00:00:00Z');
-        end = new Date();
+        start = startOfPeriod(parsedDate, period as any, timeZone); // Correctly calculate the start of the period
+        end = startOfPeriod(parsedDate, period as any, timeZone); // Correctly calculate the end of the period
         break;
     }
 
-    // Convert dates back to the local time zone
-    start = toZonedTime(start, timeZone);
-    end = toZonedTime(end, timeZone);
+    // Adjust end date calculation based on period
+    switch (period) {
+      case 'week':
+      case 'lastWeek':
+        end = endOfWeek(start, { weekStartsOn: 1 });
+        break;
+      case 'month':
+        end = endOfMonth(start);
+        break;
+      case 'quarter':
+        end = endOfQuarter(start);
+        break;
+      case 'year':
+        end = endOfYear(start);
+        break;
+    }
 
     // Format dates to ISO string in local time zone
-    const startDate = format(start, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", { timeZone });
-    const endDate = format(end, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", { timeZone });
+    const startDate = formatDate(start, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timeZone);
+    const endDate = formatDate(end, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timeZone);
 
     if (Platform.OS === 'web') {
       navigate('/periodicNote', {
