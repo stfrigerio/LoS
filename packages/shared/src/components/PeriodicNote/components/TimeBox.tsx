@@ -1,3 +1,4 @@
+//TimeBox.tsx
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 
@@ -10,7 +11,6 @@ import {
 	getLocalTimeZone,
 	isSamePeriod,
 	getUTCISOWeekNumber,
-	getUTCISOWeekYear,
 	parseDateUTC
 } from '@los/shared/src/utilities/timezoneBullshit';
 
@@ -53,7 +53,6 @@ const TimeBox: React.FC<TimeBoxProps> = ({ startDate, endDate, currentViewType }
     const isCurrentDay = useMemo(() => isSamePeriod(noteStartDate, today, 'day', timeZone), [noteStartDate, today, timeZone]);
 
     const handleOpenNote = (period: NotePeriod) => {
-		console.log('startDate', startDate);
         openNote(period, startDate);
     };
 

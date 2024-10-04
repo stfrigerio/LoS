@@ -82,18 +82,35 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 		
 		return { startDate, endDate, periodType, formattedDate };
 	});
+
+	// This handles the refresh of the component when navigating to different time ranges
+	useEffect(() => {
+		const timeZone = getLocalTimeZone();
+		const today = new Date();
+
+		let startDate = propStartDate ? parseDate(propStartDate, timeZone) : startOfWeek(today, { weekStartsOn: 1 });
+		let endDate = propEndDate ? parseDate(propEndDate, timeZone) : endOfWeek(startDate, { weekStartsOn: 1 });
+
+		// For mobile, use route params if available
+		if (Platform.OS !== 'web' && route?.params?.startDate && route?.params?.endDate) {
+			startDate = parseDate(route.params.startDate, timeZone);
+			endDate = parseDate(route.params.endDate, timeZone);
+		}
+
+		const { periodType, formattedDate } = calculatePeriodTypeAndFormatDate(startDate, endDate);
+
+		setDateState({ startDate, endDate, periodType, formattedDate });
+		console.log('dateState updated:', { startDate, endDate, periodType, formattedDate });
+	}, [propStartDate, propEndDate, route?.params?.startDate, route?.params?.endDate]);
 	
 	const handleNavigatePeriod = useCallback((direction: 'previous' | 'next' | 'current') => {
 		const timeZone = getLocalTimeZone();
 		setDateState(prevState => {
 			const { newStartDate, newEndDate } = navigatePeriod(direction, prevState.periodType, prevState.startDate, prevState.endDate, timeZone);
-			console.log('recievd dates from navigatePeriod', newStartDate, newEndDate);
 			const { periodType, formattedDate } = calculatePeriodTypeAndFormatDate(newStartDate, newEndDate);
-			console.log('recieved data from calculatePeriodTypeAndFormatDate', periodType, formattedDate);
 			return { startDate: newStartDate, endDate: newEndDate, periodType, formattedDate };
 		});
 	}, []);
-
 
 	//& to see how many times this component re-renders
 	// useEffect(() => {
@@ -170,14 +187,14 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 								periodType={dateState.periodType}
 							/>
 							{dateState.periodType !== 'week' && (
-							<>
-								<View style={{ height: 80 }} />
-								<BooleanSection
-									startDate={dateState.startDate} 
-									endDate={dateState.endDate} 
-									periodType={dateState.periodType}
-								/>
-							</>
+								<>
+									<View style={{ height: 80 }} />
+									<BooleanSection
+										startDate={dateState.startDate} 
+										endDate={dateState.endDate} 
+										periodType={dateState.periodType}
+									/>
+								</>
 							)}
 							<View style={{ height: 80 }} />
 							<MoneySection 
@@ -192,14 +209,14 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 								tagColors={tagColors} 
 							/>
 							{dateState.periodType !== 'year' && (
-							<>
-								<View style={{ height: 40 }} />
-								<SleepSection 
-									startDate={dateState.startDate} 
-									endDate={dateState.endDate} 
-									periodType={dateState.periodType} 
-								/>
-							</>
+								<>
+									<View style={{ height: 40 }} />
+									<SleepSection 
+										startDate={dateState.startDate} 
+										endDate={dateState.endDate} 
+										periodType={dateState.periodType} 
+									/>
+								</>
 							)}
 						</View>
 						{dateState.periodType === 'week' && (
