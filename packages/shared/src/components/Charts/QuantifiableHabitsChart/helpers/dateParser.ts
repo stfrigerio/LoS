@@ -6,8 +6,16 @@ import { ViewType } from '../types/types';
 export const getParseDate = (viewType: ViewType): ((s: string) => Date | null) => {
     switch (viewType) {
         case 'weekly':
-            // ISO week date with day (Monday as the first day of the week)
-            return d3.timeParse("%Y-W%V-%u"); // %u: day of the week (1-7)
+            // Parse ISO week date and return the Monday of that week
+            return (s: string) => {
+                const parsed = d3.timeParse("%Y-W%V")(s);
+                if (parsed) {
+                    const day = parsed.getDay();
+                    const diff = parsed.getDate() - day + (day === 0 ? -6 : 1);
+                    return new Date(parsed.setDate(diff));
+                }
+                return null;
+            };
         case 'monthly':
             return d3.timeParse("%Y-%m");
         case 'quarterly':

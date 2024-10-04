@@ -8,8 +8,8 @@ import {
 } from 'date-fns';
 
 export const calculatePeriodTypeAndFormatDate = (startDate: string | Date, endDate: string | Date) => {
-    let periodType;
-    let formattedDate;
+    let periodType: string;
+    let formattedDate: string;
 
     try {
         const start = startDate instanceof Date ? startDate : parseISO(startDate);
