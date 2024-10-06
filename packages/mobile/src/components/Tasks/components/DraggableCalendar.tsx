@@ -1,191 +1,201 @@
-import React, { useState, forwardRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+// CustomCalendar.tsx
+import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { Calendar } from 'react-native-calendars';
-import moment from 'moment';
+import { StyleSheet, View, LayoutChangeEvent } from 'react-native';
 
-import ViewTaskModal from '@los/shared/src/components/Home/modals/ViewTaskModal';
+import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
+import { darkCalendar, lightCalendar } from '@los/shared/src/styles/theme'; 
+import CustomDay from './CustomCalendarDay';
 
 import { databaseManagers } from '../../../database/tables';
+import { useChecklist } from '../../Contexts/checklistContext';
+import ViewTaskModal from '@los/shared/src/components/Home/modals/ViewTaskModal';
+
 import {
     parseChecklistItems,
     getUpdatedBirthdayDates,
     mergeDates,
     getDayItems,
 } from '@los/mobile/src/components/Home/hooks/useCalendar';
-import { useChecklist } from '../../Contexts/checklistContext';
 
-import { darkCalendar, lightCalendar} from '@los/shared/src/styles/theme'; 
-import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
+import { MarkedDateDetails, ExtendedTaskData } from '@los/shared/src/types/Task';
+import { DayLayout } from '../components/TaskCanvas';
 
-import { ExtendedTaskData } from '@los/shared/src/types/task';
-
-interface DraggableCalendarProps {
-    onLayoutUpdate: (layouts: any[]) => void;
-    height: number;
-    onRefresh: () => void;
+interface CustomCalendarProps {
+    updateDayLayouts: (layouts: DayLayout[]) => void;
 }
 
-const DraggableCalendar = forwardRef<View, DraggableCalendarProps>(
-    ({ onLayoutUpdate, height, onRefresh, ...calendarProps }, ref) => {
-        const { theme, themeColors, designs } = useThemeStyles();
-        const styles = getStyles(themeColors);
-        const isDarkMode = theme === 'dark';
-        const calendarTheme = isDarkMode ? darkCalendar : lightCalendar;
-        const [calendarLayout, setCalendarLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-        const [currentMonth, setCurrentMonth] = useState(moment().format('YYYY-MM-DD'));
-        const [markedDates, setMarkedDates] = useState<Record<string, any>>({});
-        const [showModal, setShowModal] = useState(false);
-        const [selectedDate, setSelectedDate] = useState('');
-        const [checklistItems, setChecklistItems] = useState<ExtendedTaskData[]>([]);
-        const { checklistUpdated, resetChecklistUpdate } = useChecklist();
-        const [birthdayDetails, setBirthdayDetails] = useState({ isBirthday: false, name: "", age: null as number | null });
-        const currentYear = new Date().getFullYear();
+const CustomCalendar: React.FC<CustomCalendarProps> = ({ updateDayLayouts }) => {
+    const { theme, themeColors, designs } = useThemeStyles();
+    const styles = getStyles(themeColors);
+    const isDarkMode = theme === 'dark';
+    const calendarTheme = isDarkMode ? darkCalendar : lightCalendar;
 
-        async function fetchMarkedDates() {
+    const [markedDates, setMarkedDates] = useState<Record<string, MarkedDateDetails>>({});
+    const [showModal, setShowModal] = useState(false);
+    const [selectedDate, setSelectedDate] = useState('');
+    const [checklistItems, setChecklistItems] = useState<ExtendedTaskData[]>([]);
+
+    const { checklistUpdated, resetChecklistUpdate } = useChecklist();
+
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    const currentDay = new Date().getDate();
+    
+    const dayLayoutsRef = useRef<DayLayout[]>([]);
+
+    const fetchMarkedDates = useCallback(async () => {
+        try {
             const items = await databaseManagers.tasks.list();
             const filteredItems = items.filter((item) => item.type !== 'checklist');
             const tempDueDates = parseChecklistItems(filteredItems);    
             const updatedBirthdayDates = await getUpdatedBirthdayDates(currentYear);
             const dueDates = mergeDates(tempDueDates, updatedBirthdayDates);
-            setMarkedDates(dueDates);
-            onRefresh();
-        }
 
-        useEffect(() => {
-            fetchMarkedDates()
-        
-            if (checklistUpdated) {
-                fetchMarkedDates();
-                resetChecklistUpdate();
-            }
-        }, [checklistUpdated]);
+            const newMarkedDates: Record<string, MarkedDateDetails> = {};
 
-        const onDayPress = async (day: any) => {
-            console.log('onDayPress', day);
-            const formattedDate = day.dateString;
-            const displayItems = await getDayItems(formattedDate, markedDates);          
-            const isBirthday = markedDates[formattedDate]?.isBirthday || false;
-            const birthdayPerson = markedDates[formattedDate]?.name || "";
-            const birthdayAge = markedDates[formattedDate]?.age ?? null;
-
-            setSelectedDate(formattedDate);
-            setChecklistItems(displayItems);
-            setShowModal(true);
-            setBirthdayDetails({ isBirthday, name: birthdayPerson, age: birthdayAge });
-        };
-        
-        const toggleItemCompletion = async (id: number, completed: boolean) => {
-            try {
-                const newItem = {
-                    ...checklistItems.find((item) => item.id === id),
-                    completed: !completed,
-                }
-        
-                await databaseManagers.tasks.upsert(newItem);
-                fetchMarkedDates();
-                if (selectedDate) {
-                    const startDate = `${selectedDate}T00:00:00.000Z`;
-                    const endDate = `${selectedDate}T23:59:59.999Z`;
-                    const items = await databaseManagers.tasks.listByDateRange(startDate, endDate);
+            Object.entries(dueDates).forEach(([date, details]) => {
+                const repeatedTasks = details.tasks?.filter(task => task.type === 'repeatedTask') || [];
+                const normalTasks = details.tasks?.filter(task => task.type !== 'repeatedTask') || [];
+                
+                const allRepeatedCompleted = repeatedTasks.length > 0 && repeatedTasks.every(task => task.completed);
+                const allNormalCompleted = normalTasks.length > 0 && normalTasks.every(task => task.completed);
             
-                    setChecklistItems(items);
-                }
-            } catch (error) {
-                console.error('Error toggling item completion:', error);
-            }
-        };
-
-        const onMonthChange = (month: any) => {
-            setCurrentMonth(month.dateString);
-        };
-
-        useEffect(() => {
-            if (calendarLayout.width > 0 && calendarLayout.height > 0) {
-                const dayWidth = calendarLayout.width / 7;
-                const dayHeight = calendarLayout.height / 6;
-                const layouts = [];
-
-                const startOfMonth = moment(currentMonth).startOf('month');
-                const endOfMonth = moment(currentMonth).endOf('month');
-                const startOfCalendar = startOfMonth.clone().startOf('week');
-                const endOfCalendar = endOfMonth.clone().endOf('week');
-
-                let currentDate = startOfCalendar.clone();
-                let week = 0;
+                newMarkedDates[date] = {
+                    ...details,
+                    isRepeated: repeatedTasks.length > 0,
+                    marked: true,
+                    dots: [
+                        details.isBirthday ? { key: 'birthday', color: 'rgba(247, 92, 120, 0.6)' } : null,
+                        repeatedTasks.length > 0 ? { key: 'repeated', color: allRepeatedCompleted ? 'rgba(61, 247, 52, 0.5)' : 'rgba(136, 30, 217, 1)' } : null,
+                        normalTasks.length > 0 ? { key: 'normal', color: allNormalCompleted ? 'rgba(61, 247, 52, 0.5)' : '#CBA95F' } : null,
+                    ].filter(Boolean) as Array<{key: string, color: string}>,
+                };
+            });
         
-                while (currentDate.isSameOrBefore(endOfCalendar)) {
-                    for (let day = 0; day < 7; day++) {
-                        layouts.push({
-                        date: currentDate.format('YYYY-MM-DD'),
-                        layout: {
-                            x: day * dayWidth,
-                            y: week * dayHeight,
-                            width: dayWidth,
-                            height: dayHeight,
-                        },
-                        });
-                        currentDate.add(1, 'day');
-                    }
-                    week++;
-                }
-        
-                onLayoutUpdate(layouts);
-            }
-        }, [calendarLayout, onLayoutUpdate, currentMonth]);
-
-        const deleteTask = async (uuid: string) => {
-            await databaseManagers.tasks.removeByUuid(uuid);
-            fetchMarkedDates();
+            setMarkedDates(newMarkedDates);
+        } catch (error) {
+            console.error('Error fetching marked dates:', error);
         }
+    }, [currentYear]);
 
-        return (
-            <View
-                ref={ref}
-                style={[styles.container, { height }]}
-                onLayout={(event) => setCalendarLayout(event.nativeEvent.layout)}
-            >
-                <Calendar
-                    onDayPress={onDayPress}
-                    onMonthChange={onMonthChange}
-                    theme={{
-                        ...calendarTheme,
-                    }}
-                    markedDates={markedDates}
-                    {...calendarProps}
-                    style={styles.calendar}
-                    enableSwipeMonths={true} 
-                />
-                {showModal && (
-                    <ViewTaskModal
-                        showModal={showModal}
-                        setShowModal={setShowModal}
-                        selectedDate={selectedDate}
-                        checklistItems={checklistItems}
-                        toggleItemCompletion={toggleItemCompletion}
-                        isBirthday={birthdayDetails.isBirthday}
-                        birthdayPerson={birthdayDetails.name}
-                        birthdayAge={birthdayDetails.age}
-                        deleteTask={deleteTask}
+    useEffect(() => {
+        fetchMarkedDates();
+    }, [fetchMarkedDates]);
+
+    useEffect(() => {
+        if (checklistUpdated) {
+            fetchMarkedDates();
+            resetChecklistUpdate();
+        }
+    }, [checklistUpdated, fetchMarkedDates, resetChecklistUpdate]);
+
+    const updateChecklistItems = useCallback(async () => {
+        if (selectedDate) {
+            const startDate = `${selectedDate}T00:00:00.000Z`;
+            const endDate = `${selectedDate}T23:59:59.999Z`;
+            const items = await databaseManagers.tasks.listByDateRange(startDate, endDate);
+            setChecklistItems(items);
+        }
+        fetchMarkedDates();
+    }, [selectedDate, fetchMarkedDates]);
+
+    const fetchDayItems = useCallback(async (date: string) => {
+        const displayItems = await getDayItems(date, markedDates);
+        const isBirthday = markedDates[date]?.isBirthday || false;
+        const birthdayPerson = markedDates[date]?.name || "";
+        const birthdayAge = markedDates[date]?.age ?? null;
+
+        return {
+            checklistItems: displayItems,
+            birthdayDetails: { isBirthday, name: birthdayPerson, age: birthdayAge }
+        };
+    }, [markedDates]);
+
+    const onDayPress = useCallback((day: any) => {
+        setSelectedDate(day.dateString);
+        setShowModal(true);
+    }, []);
+
+    const toggleItemCompletion = useCallback(async (id: number, completed: boolean) => {
+        try {
+            const item = checklistItems.find((item) => item.id === id);
+            if (!item) {
+                console.error(`Item with id ${id} not found.`);
+                return;
+            }
+            const newItem = {
+                ...item,
+                completed: !completed,
+            }
+
+            await databaseManagers.tasks.upsert(newItem);
+            updateChecklistItems();
+        } catch (error) {
+            console.error('Error toggling item completion:', error);
+        }
+    }, [checklistItems, updateChecklistItems]);
+
+    const handleDayLayout = useCallback((date: string, layout: {x: number, y: number, width: number, height: number}) => {
+        const dayLayout: DayLayout = {
+            date,
+            layout,
+        };
+        // Update the dayLayoutsRef
+        dayLayoutsRef.current = [...dayLayoutsRef.current.filter(dl => dl.date !== date), dayLayout];
+        // Send to parent
+        updateDayLayouts(dayLayoutsRef.current);
+    }, [updateDayLayouts]);
+
+    return (
+        <View>
+            <Calendar
+                onDayPress={onDayPress}
+                firstDay={1}
+                showWeekNumbers={true}
+                theme={{
+                    ...calendarTheme,
+                    weekVerticalMargin: 4
+                }}
+                style={[
+                    styles.calendar
+                ]}
+                hideExtraDays={false}
+                markingType="custom"
+                markedDates={markedDates}
+                enableSwipeMonths={true}
+                dayComponent={({ date, marking }: { date?: any; marking?: any }) => (
+                    <CustomDay
+                        date={date}
+                        marking={marking}
+                        currentMonth={currentMonth}
+                        onPress={() => date && onDayPress(date)}
+                        isToday={date.month === currentMonth && date.day === currentDay}
+                        onLayoutDay={handleDayLayout}
                     />
                 )}
-            </View>
-        );
-    }
-);
+            />
+            {showModal && (
+                <ViewTaskModal
+                    showModal={showModal}
+                    setShowModal={setShowModal}
+                    initialDate={selectedDate}
+                    fetchDayItems={fetchDayItems}
+                    toggleItemCompletion={toggleItemCompletion}
+                    updateChecklistItems={updateChecklistItems}
+                />
+            )}
+        </View>
+    );
+}
 
-const getStyles = (themeColors: any) => {
-    const { width } = Dimensions.get('window');
+const getStyles = (theme: any) => StyleSheet.create({
+    calendar: {
+        borderWidth: 1,
+        borderColor: theme.borderColor,
+        borderRadius: 8,
+        color: theme.textColor,
+    },
+});
 
-    return StyleSheet.create({
-        container: {
-            width: '100%',
-        },
-        calendar: {
-            // borderWidth: 1,
-            // borderColor: 'purple',
-            borderRadius: 8,
-        },
-    });
-};
-
-export default DraggableCalendar;
+export default CustomCalendar;

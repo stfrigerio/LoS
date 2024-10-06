@@ -1,21 +1,29 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, GestureResponderEvent } from 'react-native';
+// TaskCanvas.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
-import Animated, { useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate } from 'react-native-reanimated';
-import { PanGestureHandler } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 import AlertModal from '@los/shared/src/components/modals/AlertModal';
 import CustomCalendar from './DraggableCalendar';
-
-import { databaseManagers } from '@los/mobile/src/database/tables';
+import { DraggableTask } from './DraggableTask';
+import { TaskColumn } from './TaskColumn';
+import DebugOverlay from './DebugOverlay'; // Ensure correct import
 import { DrawerStateManager } from '@los/mobile/src/components/Contexts/DrawerState';
+import { useTaskManagement } from '../hooks/useCanvas';
 
 import { ExtendedTaskData } from '@los/shared/src/types/Task';
 
-interface DayLayout {
+interface CanvasScreenProps {
+    refreshTrigger: number;
+    addTask: (task: ExtendedTaskData) => Promise<void>;
+    updateTask: (task: ExtendedTaskData) => Promise<void>;
+    deleteTask: (taskId: string) => Promise<void>;
+    refreshTasks: () => Promise<void>;
+}
+
+export interface DayLayout {
     date: string;
     layout: {
         x: number;
@@ -23,14 +31,6 @@ interface DayLayout {
         width: number;
         height: number;
     };
-}
-
-interface CanvasScreenProps {
-    refreshTrigger: number;
-    addTask: (task: any) => Promise<void>;
-    updateTask: (task: any) => Promise<void>;
-    deleteTask: (taskId: string) => Promise<void>;
-    refreshTasks: () => Promise<void>;
 }
 
 const TaskCanvas: React.FC<CanvasScreenProps> = ({ 
@@ -42,206 +42,38 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
 }) => {
     const { themeColors, designs } = useThemeStyles();
     const styles = React.useMemo(() => getStyles(themeColors, designs), [themeColors, designs]);
-    const [tasks, setTasks] = useState<ExtendedTaskData[]>([]);
-    const calendarRef = useRef<View>(null);
-    const calendarContainerRef = useRef<View>(null);
-    const dayLayoutsRef = useRef<DayLayout[]>([]);
+    const {
+        tasks,
+        tasksWithFakes,
+        handleDeleteTask,
+        confirmDeleteTask,
+        handleDragEnd,
+        deleteModalVisible,
+        setDeleteModalVisible,
+        updateDayLayouts,
+        dayLayoutsRef
+    } = useTaskManagement(refreshTrigger, updateTask, deleteTask, refreshTasks);
+
     const isDragging = useSharedValue(0);
-    const [calendarKey, setCalendarKey] = useState(0);
-    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-    const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (DrawerStateManager) {
-            DrawerStateManager.disableAllSwipeInteractions();
-        }
-    
-        // Cleanup function to re-enable swipe interactions when component unmounts
-        return () => {
-            if (DrawerStateManager) {
-                DrawerStateManager.enableAllSwipeInteractions();
-            }
-        };
-    }, []); 
+    const animatedScrollViewStyle = useAnimatedStyle(() => ({
+        zIndex: interpolate(isDragging.value, [0, 1], [0, 1000]),
+    }));
 
-    useEffect(() => {
-        fetchTasksWithoutDueDates();
-    }, [refreshTrigger]);
-
-    const fetchTasksWithoutDueDates = async () => {
-        try {
-            const allTasks = await databaseManagers.tasks.list();
-            const filteredTasks = allTasks.filter((task: ExtendedTaskData) => 
-                !task.due && task.type !== 'checklist'
-            );
-            setTasks(filteredTasks);
-        } catch (error) {
-            console.error('Error fetching tasks:', error);
-        }
-    };
-
-    const handleDeleteTask = (taskId: string) => {
-        setTaskToDelete(taskId);
-        setDeleteModalVisible(true);
-    };
-
-    const confirmDeleteTask = async () => {
-        if (taskToDelete) {
-            await deleteTask(taskToDelete);
-            await refreshTasks();
-            setTasks(prevTasks => prevTasks.filter(t => t.uuid !== taskToDelete));
-        }
-        setDeleteModalVisible(false);
-        setTaskToDelete(null);
-    };
-    
-    const handleDragEnd = useCallback(async (taskUuid: string, x: number, y: number) => {
-        calendarContainerRef.current?.measure(async (fx, fy, width, height, px, py) => {
-            const calendarX = px;
-            const calendarY = py;
-        
-            const adjustedX = x - calendarX;
-            const adjustedY = y - calendarY;
-        
-            const rowHeight = height / 7;
-            const offsetAdjustedY = adjustedY - rowHeight;
-
-            const droppedDay = dayLayoutsRef.current.find(day => {
-                const isDropped = 
-                    adjustedX >= day.layout.x && 
-                    adjustedX < day.layout.x + day.layout.width &&
-                    offsetAdjustedY >= day.layout.y && 
-                    offsetAdjustedY < day.layout.y + day.layout.height;
-                
-                return isDropped;
-            });
-        
-            if (droppedDay) {
-                const task = tasks.find(t => t.uuid === taskUuid);
-                if (task) {
-                    const newTask = {
-                        ...task,
-                        due: new Date(droppedDay.date).toISOString(),
-                    };
-
-                    await updateTask(newTask);
-                    await refreshTasks();
-                    setCalendarKey(prev => prev + 1); // Force a re-render of the calendar
-                    
-                    // Remove the task from the local state
-                    setTasks(prevTasks => prevTasks.filter(t => t.uuid !== taskUuid));
-                } else {
-                    console.log('Task not found:', taskUuid);
-                }
-            } else {
-                console.log('Task not dropped on a valid day');
-            }
-        });
-    }, [tasks, updateTask, refreshTasks]);
-
-    // if we have only one column, we need fake tasks to maintain the layout of two columns when dragging
-    const tasksWithFakes = useMemo(() => {
-        const fakeTask = (id: number): ExtendedTaskData => ({ 
-            uuid: `fake-${id}`, 
-            text: '', 
-            type: 'task', 
-            completed: false 
-        });
-        
-        if (tasks.length < 4) {
-            return [
-                ...tasks, 
-                ...Array(4 - tasks.length).fill(null).map((_, index) => fakeTask(index))
-            ];
-        }
-        return tasks;
-    }, [tasks]);
-
-    const DraggableTask = ({ task }: { task: ExtendedTaskData }) => {
-        if (task.uuid!.startsWith('fake-')) return null;
-
-        const translateX = useSharedValue(0);
-        const translateY = useSharedValue(0);
-        const scale = useSharedValue(1);
-
-        const handleDeletePress = (event: GestureResponderEvent) => {
-            event.stopPropagation();
-            handleDeleteTask(task.uuid!);
-        };
-
-        const panGesture = useAnimatedGestureHandler({
-            onStart: (_, ctx: any) => {
-                ctx.startX = translateX.value;
-                ctx.startY = translateY.value;
-                scale.value = 1.1; // Slightly enlarge the task when dragging starts
-                isDragging.value = 1;
-            },
-            onActive: (event, ctx: any) => {
-                translateX.value = ctx.startX + event.translationX;
-                translateY.value = ctx.startY + event.translationY;
-            },
-            onEnd: (event) => {
-                runOnJS(handleDragEnd)(task.uuid!, event.absoluteX, event.absoluteY);
-                translateX.value = withSpring(0);
-                translateY.value = withSpring(0);
-                scale.value = withSpring(1);
-                isDragging.value = 0;
-            },
-        });
-    
-        const animatedStyle = useAnimatedStyle(() => ({
-            transform: [
-                { translateX: translateX.value },
-                { translateY: translateY.value },
-                { scale: scale.value },
-            ],
-        }));
-    
-        return (
-            <View style={styles.taskWrapper}>
-                <PanGestureHandler onGestureEvent={panGesture}>
-                    <Animated.View style={[styles.taskItem, animatedStyle]}>
-                        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.taskText}>{task.text}</Text>
-                    </Animated.View>
-                </PanGestureHandler>
-                <Pressable onPress={handleDeletePress} style={styles.deleteIcon}>
-                    <FontAwesomeIcon icon={faTrash} color={themeColors.textColor} size={14} />
-                </Pressable>
-            </View>
-        );
-    };
-
-    const handleDayLayoutsUpdate = useCallback((layouts: DayLayout[]) => {
-        dayLayoutsRef.current = layouts;
-    }, []);
-
-    const TaskColumn = ({ tasks }: { tasks: ExtendedTaskData[] }) => (
-        <View style={styles.taskColumn}>
-            {tasks.map((task) => (
-                <DraggableTask key={task.uuid} task={task} />
-            ))}
-        </View>
-    );
-
-    // Split tasks into pairs
+    // Split tasks into groups of 3
     const taskPairs = tasksWithFakes.reduce<ExtendedTaskData[][]>((result, item, index) => {
-        if (index % 3 === 0) {
-            result.push([item]);
-        } else {
-            result[result.length - 1].push(item);
-        }
+        if (index % 3 === 0) result.push([item]);
+        else result[result.length - 1].push(item);
         return result;
     }, []);
-    
-    const animatedScrollViewStyle = useAnimatedStyle(() => {
-        return {
-            zIndex: interpolate(isDragging.value, [0, 1], [0, 1000]),
-        };
-    });
 
-    const handleCalendarRefresh = useCallback(() => {
-        refreshTasks();
-    }, []);
+    const handleDayLayoutsUpdate = (layouts: DayLayout[]) => {
+        updateDayLayouts(layouts);
+    };
+
+    const handleDragStart = () => {
+        isDragging.value = 1;
+    };
 
     return (
         <GestureHandlerRootView style={styles.container}>
@@ -254,19 +86,29 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
                         horizontal={true}
                     >
                         {taskPairs.map((pair, index) => (
-                            <TaskColumn key={index} tasks={pair} />
+                            <TaskColumn key={index} tasks={pair}>
+                                {(task) => (
+                                    <DraggableTask
+                                        key={task.uuid}
+                                        task={task}
+                                        onDeletePress={() => handleDeleteTask(task.uuid!)}
+                                        onDragStart={handleDragStart} // New prop
+                                        onDragEnd={(x, y) => handleDragEnd(task.uuid!, x, y)}
+                                        isDragging={isDragging}
+                                        themeColors={themeColors}
+                                        styles={styles}
+                                    />
+                                )}
+                            </TaskColumn>
                         ))}
                     </Animated.ScrollView>
-                    <View style={styles.calendarContainer} ref={calendarContainerRef}>
+                    <View style={styles.calendarContainer}>
                         <CustomCalendar 
-                            key={calendarKey}
-                            ref={calendarRef}
-                            onLayoutUpdate={handleDayLayoutsUpdate}
-                            onRefresh={handleCalendarRefresh}
-                            height={300}
+                            updateDayLayouts={handleDayLayoutsUpdate}
                         />
                     </View>
                 </View>
+                <DebugOverlay dayLayouts={dayLayoutsRef.current} />
             </View>
             <AlertModal
                 isVisible={deleteModalVisible}
@@ -293,14 +135,10 @@ const getStyles = (themeColors: any, designs: any) => {
         },
         contentContainer: {
             flex: 1,
-            // borderWidth: 1,
-            // borderColor: 'blue',
             position: 'relative',
         },
         tasksScrollContainer: {
             flex: 1,
-            // borderWidth: 1,
-            // borderColor: 'red',
         },
         tasksContentContainer: {
             flexDirection: 'row',
@@ -324,9 +162,7 @@ const getStyles = (themeColors: any, designs: any) => {
             left: 0,
             right: 0,
             height: calendarHeight,
-            // borderWidth: 1,
-            // borderColor: 'yellow',
-            backgroundColor: themeColors.backgroundColor,
+            zIndex: 10, // Ensure it's on top
         },
         taskColumn: {
             width: screenWidth * 0.34, // Adjust this value as needed
