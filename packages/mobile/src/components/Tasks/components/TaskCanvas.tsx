@@ -51,7 +51,7 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
         deleteModalVisible,
         setDeleteModalVisible,
         updateDayLayouts,
-        dayLayoutsRef
+        getDayLayouts
     } = useTaskManagement(refreshTrigger, updateTask, deleteTask, refreshTasks);
 
     const isDragging = useSharedValue(0);
@@ -74,7 +74,7 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
     const handleDragStart = () => {
         isDragging.value = 1;
     };
-
+    
     return (
         <GestureHandlerRootView style={styles.container}>
             <View style={styles.canvasContainer}>
@@ -108,7 +108,7 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
                         />
                     </View>
                 </View>
-                <DebugOverlay dayLayouts={dayLayoutsRef.current} />
+                <DebugOverlay dayLayouts={getDayLayouts()} />
             </View>
             <AlertModal
                 isVisible={deleteModalVisible}
@@ -123,7 +123,7 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
 
 const getStyles = (themeColors: any, designs: any) => {
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-    const calendarHeight = screenHeight * 0.5; // Adjust this value as needed
+    const calendarHeight = screenHeight * 0.55; // Adjust this value as needed
 
     return StyleSheet.create({
         container: {

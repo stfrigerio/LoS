@@ -7,7 +7,7 @@ interface DebugOverlayProps {
     dayLayouts: DayLayout[];
 }
 
-const DebugOverlay: React.FC<DebugOverlayProps> = ({ dayLayouts }) => {
+const DebugOverlay: React.FC<DebugOverlayProps> = ({ dayLayouts }) => {    
     return (
         <View style={styles.overlayContainer} pointerEvents="none">
             {dayLayouts.map((day) => (
@@ -18,8 +18,8 @@ const DebugOverlay: React.FC<DebugOverlayProps> = ({ dayLayouts }) => {
                         {
                             left: day.layout.x,
                             top: day.layout.y,
-                            width: day.layout.width + 10, // Increased width for visibility
-                            height: day.layout.height + 10, // Increased height for visibility
+                            width: day.layout.width, // Increased width for visibility
+                            height: day.layout.height, // Increased height for visibility
                         }
                     ]}
                 />
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         borderWidth: 2,
         borderColor: 'red',
-        backgroundColor: 'rgba(255,0,0,0.2)', // Semi-transparent red for visibility
+        backgroundColor: 'rgba(255, 0, 0, 0.2)', // Semi-transparent red for visibility
     },
 });
 

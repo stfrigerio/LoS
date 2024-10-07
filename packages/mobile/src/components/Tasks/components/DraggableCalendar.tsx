@@ -198,4 +198,4 @@ const getStyles = (theme: any) => StyleSheet.create({
     },
 });
 
-export default CustomCalendar;
+export default React.memo(CustomCalendar);

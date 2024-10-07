@@ -17,16 +17,16 @@ const CustomDay: React.FC<CustomDayProps> = ({ date, marking, onPress, isToday, 
     useEffect(() => {
         const measureDay = () => {
             if (dayRef.current) {
-                const handle = findNodeHandle(dayRef.current);
-                if (handle) {
-                    UIManager.measureInWindow(handle, (x, y, width, height) => {
-                        onLayoutDay(date.dateString, {x, y, width, height});
-                        console.log(`Measured Day ${date.dateString}: x=${x}, y=${y}, width=${width}, height=${height}`);
+                const node = findNodeHandle(dayRef.current);
+                if (node) {
+                    dayRef.current.measure((x, y, width, height, pageX, pageY) => {
+                        onLayoutDay(date.dateString, {x: pageX - 20, y: pageY - 56, width, height});
+                        // console.log(`Measured Day ${date.dateString}: x=${pageX}, y=${pageY}, width=${width}, height=${height}`);
                     });
                 }
             }
         };
-
+    
         // Use requestAnimationFrame to ensure measurement after layout
         const requestId = requestAnimationFrame(measureDay);
 
@@ -45,17 +45,18 @@ const CustomDay: React.FC<CustomDayProps> = ({ date, marking, onPress, isToday, 
             <Text style={[styles.text, isToday && styles.todayText]}>
                 {date.day}
             </Text>
-            {/* Render dots or other markings based on `marking` prop */}
-            {marking && marking.dots && marking.dots.map((dot: any) => (
-                <View key={dot.key} style={[styles.dot, { backgroundColor: dot.color }]} />
-            ))}
+            <View style={styles.markingsContainer}>
+                {marking && marking.dots && marking.dots.map((dot: any) => (
+                    <View key={dot.key} style={[styles.dot, { backgroundColor: dot.color }]} />
+                ))}
+            </View>
         </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        width: 40, // Fixed width for uniformity
+        width: 30, // Fixed width for uniformity
         height: 40, // Fixed height for uniformity
         alignItems: 'center',
         justifyContent: 'center',
@@ -75,6 +76,10 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         marginTop: 2,
     },
+    markingsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
 });
 
-export default CustomDay;
+export default React.memo(CustomDay);

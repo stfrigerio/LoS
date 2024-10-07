@@ -1,5 +1,6 @@
 // useCanvas.ts
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+
 import { databaseManagers } from '@los/mobile/src/database/tables';
 import { ExtendedTaskData } from '@los/shared/src/types/Task';
 import { DayLayout } from '../components/TaskCanvas';
@@ -13,7 +14,7 @@ export const useTaskManagement = (
     const [tasks, setTasks] = useState<ExtendedTaskData[]>([]);
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
-    const dayLayoutsRef = useRef<DayLayout[]>([]);
+    const [dayLayouts, setDayLayouts] = useState<DayLayout[]>([]); // Changed from useRef to useState
 
     useEffect(() => {
         fetchTasksWithoutDueDates();
@@ -49,7 +50,7 @@ export const useTaskManagement = (
     const handleDragEnd = useCallback(async (taskUuid: string, x: number, y: number) => {
         console.log(`Drop coordinates: x=${x}, y=${y}`); // Debugging log
         const buffer = 15; // Increased buffer to 15 pixels
-        const droppedDay = dayLayoutsRef.current.find(day => {
+        const droppedDay = dayLayouts.find(day => {
             return (
                 x >= (day.layout.x - buffer) && 
                 x <= (day.layout.x + day.layout.width + buffer) &&
@@ -79,7 +80,7 @@ export const useTaskManagement = (
             console.log('Task not dropped on a valid day');
             alert("You haven't dropped it on a day."); // Provide user feedback
         }
-    }, [tasks, updateTask, refreshTasks]);
+    }, [tasks, updateTask, refreshTasks, dayLayouts]); // Added dayLayouts to dependencies
 
     const tasksWithFakes = useMemo(() => {
         const fakeTask = (id: number): ExtendedTaskData => ({ 
@@ -98,10 +99,14 @@ export const useTaskManagement = (
         return tasks;
     }, [tasks]);
 
-    const updateDayLayouts = (layouts: DayLayout[]) => {
-        dayLayoutsRef.current = layouts;
-        // console.log('Updated day layouts:', layouts); // Debugging log
-    };
+    const updateDayLayouts = useCallback((layouts: DayLayout[]) => {
+        setDayLayouts(layouts); // Update state instead of ref
+        // console.log('Updating day layouts:', layouts);
+    }, []);
+
+    const getDayLayouts = useCallback(() => {
+        return dayLayouts;
+    }, [dayLayouts]); // Ensure getDayLayouts returns latest state
 
     return {
         tasks,
@@ -112,6 +117,6 @@ export const useTaskManagement = (
         deleteModalVisible,
         setDeleteModalVisible,
         updateDayLayouts,
-        dayLayoutsRef
+        getDayLayouts
     };
 };
