@@ -13,14 +13,16 @@ import DateNavigation from '@los/shared/src/components/PeriodicNote/components/D
 import DateHeader from '@los/shared/src/components/DailyNote/components/DateHeader';
 import TextLists from './components/TextLists';
 import TextInputs from './components/TextInputs';
+import SectionSidebar from './components/SectionSidebar';
+import { Ionicons } from '@expo/vector-icons'; // Ensure you have an icon library installed
 
-import { ObjectivesSection } from './components/ObjectivesSection';
-import QuantifiableSection from './components/ChartSection/QuantifiableSection';
-import MoneySection from './components/ChartSection/MoneySection';
-import TimeSection from './components/ChartSection/TimeSection';
-import SleepSection from './components/ChartSection/SleepSection';
+import { ObjectivesSection } from './components/Sections/ObjectivesSection';
+import QuantifiableSection from './components/Sections/QuantifiableSection';
+import BooleanSection from './components/Sections/BooleanSection';
+import MoneySection from './components/Sections/MoneySection';
+import TimeSection from './components/Sections/TimeSection';
+import SleepSection from './components/Sections/SleepSection';
 import MobileNavbar from '../../sharedComponents/NavBar';
-import BooleanSection from './components/ChartSection/BooleanSection';
 
 // Functions
 import { useThemeStyles } from '../../styles/useThemeStyles';
@@ -112,6 +114,26 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 		});
 	}, []);
 
+	const sections = useMemo(() => [
+		{ id: 'objectives', title: 'Objectives', icon: 'ios-bulb' },
+		{ id: 'quantifiable', title: 'Quantifiable', icon: 'ios-stats-chart' },
+		{ id: 'boolean', title: 'Boolean', icon: 'ios-checkmark-circle' },
+		{ id: 'money', title: 'Money', icon: 'ios-cash' },
+		{ id: 'time', title: 'Time', icon: 'ios-time' },
+		{ id: 'sleep', title: 'Sleep', icon: 'ios-bed' },
+		{ id: 'gpt', title: 'GPT Section', icon: 'ios-chatbubbles' },
+		{ id: 'textLists', title: 'Text Lists', icon: 'ios-list' },
+		{ id: 'textInputs', title: 'Text Inputs', icon: 'ios-create' },
+	], []);
+	
+
+	const [activeSection, setActiveSection] = useState<string>('objectives');
+
+	// Function to handle section selection from the sidebar
+	const handleSectionSelect = (id: string) => {
+		setActiveSection(id);
+	};
+
 	//& to see how many times this component re-renders
 	// useEffect(() => {
 	//   const currentTime = performance.now();
@@ -148,100 +170,149 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 		}
 	}, [dateState.periodType]);
 
+	// Function to render the active section
+	const renderActiveSection = () => {
+		switch (activeSection) {
+		case 'objectives':
+			return (
+			<ObjectivesSection
+				isModalVisible={isModalVisible}
+				setIsModalVisible={setIsModalVisible}
+				currentDate={dateState.formattedDate}
+			/>
+			);
+		case 'quantifiable':
+			return (
+			<QuantifiableSection
+				startDate={dateState.startDate}
+				endDate={dateState.endDate}
+				tagColors={tagColors}
+				periodType={dateState.periodType}
+			/>
+			);
+		case 'boolean':
+			if (dateState.periodType === 'week') return null; // Conditionally render based on periodType
+			return (
+			<BooleanSection
+				startDate={dateState.startDate}
+				endDate={dateState.endDate}
+				periodType={dateState.periodType}
+			/>
+			);
+		case 'money':
+			return (
+			<MoneySection
+				startDate={dateState.startDate}
+				endDate={dateState.endDate}
+				tagColors={tagColors}
+			/>
+			);
+		case 'time':
+			return (
+			<TimeSection
+				startDate={dateState.startDate}
+				endDate={dateState.endDate}
+				tagColors={tagColors}
+			/>
+			);
+		case 'sleep':
+			if (dateState.periodType === 'year') return null;
+			return (
+			<SleepSection
+				startDate={dateState.startDate}
+				endDate={dateState.endDate}
+				periodType={dateState.periodType}
+			/>
+			);
+		case 'gpt':
+			if (dateState.periodType !== 'week') return null;
+			return (
+			<GPTSection
+				startDate={dateState.startDate}
+				endDate={dateState.endDate}
+				currentDate={dateState.formattedDate}
+			/>
+			);
+		case 'textLists':
+			if (dateState.periodType !== 'week') return null;
+			return (
+			<TextLists
+				startDate={dateState.startDate}
+				endDate={dateState.endDate}
+			/>
+			);
+		case 'textInputs':
+			return (
+			<TextInputs
+				periodType={dateState.periodType}
+				startDate={dateState.startDate.toISOString()}
+				endDate={dateState.endDate.toISOString()}
+			/>
+			);
+		default:
+			return null;
+		}
+	};
+
 	const renderContent = () => {
 		try {
 		return (
 			<>
-				<View style={styles.mainContainer}>
-					<View style={styles.centerLine} />
-					<ScrollView style={styles.container}>
-						<ColorfulTimeline title={dateState.formattedDate} />
+			<View style={styles.mainContainer}>
+				{/* Render Sidebar for Web */}
+				{Platform.OS === 'web' && (
+				<SectionSidebar
+					sections={sections}
+					onSectionSelect={handleSectionSelect}
+					activeSection={activeSection}
+				/>
+				)}
 
-						<View style={styles.periodNote}>
-							<DateHeader 
-								formattedDate={dateState.formattedDate} 
-								periodType={dateState.periodType} 
-							/>
-							<View style={styles.navigation}>
-								<TimeBox 
-									startDate={dateState.startDate.toISOString()} 
-									endDate={dateState.endDate.toISOString()} 
-									currentViewType={dateState.periodType}
-								/>
-								<DateNavigation 
-									periodType={dateState.periodType} 
-									onNavigate={handleNavigatePeriod}
-								/>
-							</View>
-						</View>
-						<ObjectivesSection 
-							isModalVisible={isModalVisible} 
-							setIsModalVisible={setIsModalVisible} 
-							currentDate={dateState.formattedDate}
+				{/* Main Content Area */}
+				<View style={[
+				styles.contentContainer,
+				Platform.OS === 'web' && { marginLeft: 200 }
+				]}>
+				<ScrollView style={styles.container}>
+					<ColorfulTimeline title={dateState.formattedDate} />
+
+					<View style={styles.periodNote}>
+					<DateHeader
+						formattedDate={dateState.formattedDate}
+						periodType={dateState.periodType}
+					/>
+					<View style={styles.navigation}>
+						<TimeBox
+						startDate={dateState.startDate.toISOString()}
+						endDate={dateState.endDate.toISOString()}
+						currentViewType={dateState.periodType}
 						/>
-						<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-							<QuantifiableSection 
-								startDate={dateState.startDate} 
-								endDate={dateState.endDate} 
-								tagColors={tagColors} 
-								periodType={dateState.periodType}
-							/>
-							{dateState.periodType !== 'week' && (
-								<>
-									<View style={{ height: 80 }} />
-									<BooleanSection
-										startDate={dateState.startDate} 
-										endDate={dateState.endDate} 
-										periodType={dateState.periodType}
-									/>
-								</>
-							)}
-							<View style={{ height: 80 }} />
-							<MoneySection 
-								startDate={dateState.startDate} 
-								endDate={dateState.endDate} 
-								tagColors={tagColors} 
-							/>
-							<View style={{ height: 80 }} />
-							<TimeSection 
-								startDate={dateState.startDate} 
-								endDate={dateState.endDate} 
-								tagColors={tagColors} 
-							/>
-							{dateState.periodType !== 'year' && (
-								<>
-									<View style={{ height: 40 }} />
-									<SleepSection 
-										startDate={dateState.startDate} 
-										endDate={dateState.endDate} 
-										periodType={dateState.periodType} 
-									/>
-								</>
-							)}
-						</View>
-						{dateState.periodType === 'week' && (
-							<View style={styles.GPTSection}>
-								<GPTSection 
-									startDate={dateState.startDate} 
-									endDate={dateState.endDate} 
-									currentDate={dateState.formattedDate} 
-								/>
-							</View>
-						)}
-						{dateState.periodType === 'week' && (
-							<TextLists 
-								startDate={dateState.startDate} 
-								endDate={dateState.endDate} 
-							/>
-						)}
-						<TextInputs 
-							periodType={dateState.periodType} 
-							startDate={dateState.startDate.toISOString()} 
-							endDate={dateState.endDate.toISOString()} 
+						<DateNavigation
+						periodType={dateState.periodType}
+						onNavigate={handleNavigatePeriod}
 						/>
-					</ScrollView>
+					</View>
+					</View>
+
+					{/* Render Active Section */}
+					<View style={styles.activeSectionContainer}>
+					{renderActiveSection()}
+					</View>
+				</ScrollView>
 				</View>
-				<View style={{ height: 80 }} />
+			</View>
+
+			{/* Render Sidebar for Mobile (e.g., as a bottom navigation or drawer) */}
+			{Platform.OS !== 'web' && (
+				<SectionSidebar
+				sections={sections}
+				onSectionSelect={handleSectionSelect}
+				activeSection={activeSection}
+				/>
+			)}
+
+			{/* Navbar */}
+			<View style={{ height: 80 }} />
 				<MobileNavbar
 					items={navItems}
 					activeIndex={activeIndex}
@@ -281,6 +352,11 @@ const getStyles = (theme: any) => {
 			flex: 1,
 			backgroundColor: theme.backgroundColor,
 		},
+		contentContainer: {
+			flex: 1,
+			backgroundColor: theme.backgroundColor,
+			padding: 20,
+		},
 		periodNote: {
 			padding: 20,
 		},
@@ -303,6 +379,10 @@ const getStyles = (theme: any) => {
 			marginTop: 20,
 			marginHorizontal: 20
 		},    
+		activeSectionContainer: {
+			marginTop: 20,
+			// Additional styling as needed
+		  },
 	});
 };
 
