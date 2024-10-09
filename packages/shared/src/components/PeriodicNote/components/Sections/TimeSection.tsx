@@ -34,8 +34,6 @@ const ChartSection: React.FC<ChartSectionProps> = ({
     const [isHeatmapLoaded, setIsHeatmapLoaded] = useState(false);
 
     const { timeData } = usePeriodicData(startDate, endDate);
-    // log the timeData when date is 2024-08-28
-    // console.log("timeData: ", timeData.filter((entry: any) => entry.date === "2024-08-28"));
     const timeSunburstData = useMemo(() => processTimeSunburstData(timeData), [timeData]);
     const timeHeatmapData = useMemo(() => processMultiDayHourData(timeData), [timeData]);
     
@@ -62,7 +60,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({
     }
 
     return (
-        <View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <View>
                 <SunburstChart
                     data={timeSunburstData}

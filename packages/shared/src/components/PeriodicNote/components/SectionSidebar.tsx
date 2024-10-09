@@ -2,9 +2,12 @@
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions, Animated } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
-import { useThemeStyles } from '../../../styles/useThemeStyles'; // Adjust the import path as necessary
+
+import { useThemeStyles } from '../../../styles/useThemeStyles'; 
+import Color from 'color'; 
 
 type SidebarVisibility = 'hidden' | 'icons' | 'extended';
 
@@ -49,38 +52,40 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({ sections, onSectionSele
 		return null;
 	}
 
+	const translucentBackgroundColor = Color(themeColors.backgroundSecondary).alpha(0.4).toString();
+
 	return (
 		<Animated.View style={[styles.sidebarContainer, { width: animatedWidth }]}>
 			<Svg height={height} width={sidebarWidth} style={styles.sidebarShape}>
-				<Path d={path} fill={themeColors.backgroundSecondary} />
+				<Path d={path} fill={translucentBackgroundColor} />
 			</Svg>
 			<View style={styles.sidebarContent}>
 				{sections.map((section) => (
-				<Pressable
-					key={section.id}
-					style={[styles.button, visibility === 'extended' && styles.extendedButton]}
-					onPress={() => onSectionSelect(section.id)}
-				>
-					{section.icon && (
-						<Ionicons
-							name={section.icon as any}
-							size={24}
-							color={activeSection === section.id ? themeColors.hoverColor : 'black'}
-						/>
-					)}
-					{visibility === 'extended' && (
-						<Text style={[
-							styles.buttonText, 
-							{ color: activeSection === section.id ? themeColors.hoverColor : 'black' }
-						]}>
-							{section.title}
-						</Text>
-					)}
-				</Pressable>
+					<Pressable
+						key={section.id}
+						style={[styles.button, visibility === 'extended' && styles.extendedButton]}
+						onPress={() => onSectionSelect(section.id)}
+					>
+						{section.icon && (
+							<Ionicons
+								name={section.icon as any}
+								size={24}
+								color={activeSection === section.id ? themeColors.hoverColor : 'black'}
+							/>
+						)}
+						{visibility === 'extended' && (
+							<Text style={[
+								styles.buttonText, 
+								{ color: activeSection === section.id ? themeColors.hoverColor : 'black' }
+							]}>
+								{section.title}
+							</Text>
+						)}
+					</Pressable>
 				))}
 			</View>
-			</Animated.View>
-		);
+		</Animated.View>
+	);
 };
 
 const styles = StyleSheet.create({

@@ -133,6 +133,7 @@ const LeftDrawerNavigator: React.FC = () => {
         swipeEdgeWidth: 100,
         drawerStyle: {
           width: 300,
+          backgroundColor: 'transparent',
         },
         headerShown: false,
         drawerPosition: 'left'

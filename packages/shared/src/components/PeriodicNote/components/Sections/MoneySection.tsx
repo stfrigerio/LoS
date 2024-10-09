@@ -52,7 +52,7 @@ const MoneySection: React.FC<ChartSectionProps> = ({
 
     return (
         <>
-            <View>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <View>
                     <SunburstChart
                         data={moneySunburstData}

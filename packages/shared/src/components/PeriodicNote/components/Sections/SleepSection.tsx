@@ -75,7 +75,7 @@ const SleepSection: React.FC<ChartSectionProps> = ({
     };
 
     return (
-        <>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <SleepChart
                 sleepData={validSleepData}
                 openNoteForDay={openNote}
@@ -83,7 +83,7 @@ const SleepSection: React.FC<ChartSectionProps> = ({
                 height={chartHeight}
                 isMonthView={periodType === 'month'}
             />
-        </>
+        </View>
     );
 };
 

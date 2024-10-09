@@ -94,7 +94,7 @@ const QuantifiableSection: React.FC<QuantifiableSectionProps> = ({
     }
 
     return (
-        <>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <QuantifiableHabitsChart 
                 userSettings={userSettingsQuantifiables}
                 data={quantifiableHabitsData} 
@@ -105,7 +105,7 @@ const QuantifiableSection: React.FC<QuantifiableSectionProps> = ({
                 width={chartWidth}
                 height={chartHeight}
             />
-        </>
+        </View>
     );
 };
 

@@ -6,20 +6,22 @@ import { ScrollView, View, StyleSheet, Platform, Dimensions, Pressable } from 'r
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '@los/mobile/App';
 import { Ionicons } from '@expo/vector-icons';
-import { useDateState } from './helpers/useDateState';
-import { SectionRenderer } from './components/SectionRenderer';
-import { useThemeStyles } from '../../styles/useThemeStyles';
-import { useHomepage } from '../Home/helpers/useHomepage';
-import { navigatePeriod } from './helpers/navigatePeriod';
-import { getLocalTimeZone } from '@los/shared/src/utilities/timezoneBullshit';
+import Color from 'color';
 
 // Components
 import TimeBox from '@los/shared/src/components/PeriodicNote/components/TimeBox';
 import DateNavigation from '@los/shared/src/components/PeriodicNote/components/DateNavigation';
 import DateHeader from '@los/shared/src/components/DailyNote/components/DateHeader';
+import { SectionRenderer } from './components/SectionRenderer';
 import SectionSidebar from './components/SectionSidebar';
 import MobileNavbar from '../../sharedComponents/NavBar';
+
 import { calculatePeriodTypeAndFormatDate } from './helpers/periodCalculation';
+import { useDateState } from './helpers/useDateState';
+import { useThemeStyles } from '../../styles/useThemeStyles';
+import { useHomepage } from '../Home/helpers/useHomepage';
+import { navigatePeriod } from './helpers/navigatePeriod';
+import { getLocalTimeZone } from '@los/shared/src/utilities/timezoneBullshit';
 
 let ColorfulTimeline: React.ComponentType<any>;
 let useColors: any;
@@ -44,7 +46,7 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 	const styles = getStyles(themeColors);
 	const { colors: tagColors } = useColors();
 	const [isModalVisible, setIsModalVisible] = useState(false);
-	const [sidebarVisibility, setSidebarVisibility] = useState<'hidden' | 'icons' | 'extended'>('extended');
+	const [sidebarVisibility, setSidebarVisibility] = useState<'hidden' | 'icons' | 'extended'>('hidden');
 	const [activeSection, setActiveSection] = useState<string>('objectives');
 
 	const { openHomepage, openCurrentWeek, openToday, openCurrentMonth } = useHomepage();
@@ -66,13 +68,16 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 			{ id: 'quantifiable', title: 'Quantifiable', icon: 'ios-stats-chart' },
 			{ id: 'money', title: 'Money', icon: 'ios-cash' },
 			{ id: 'time', title: 'Time', icon: 'ios-time' },
-			{ id: 'sleep', title: 'Sleep', icon: 'ios-bed' },
 			{ id: 'gpt', title: 'GPT Section', icon: 'ios-chatbubbles' },
 			{ id: 'text', title: 'Text', icon: 'ios-list' },
 		];
 
 		if (dateState.periodType != 'week') {
 			baseSections.splice(2, 0, { id: 'boolean', title: 'Boolean', icon: 'ios-checkmark-circle' });
+		}
+
+		if (dateState.periodType == 'week' || dateState.periodType == 'month' || dateState.periodType == 'quarter') {
+			baseSections.splice(3, 0, { id: 'sleep', title: 'Sleep', icon: 'ios-bed' });
 		}
 
 		return baseSections;
@@ -104,6 +109,7 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 	const handlePressOut = () => {
 		setSidebarVisibility(current => current === 'extended' ? 'icons' : current);
 	};
+
 
 	return (
 		<>
@@ -152,7 +158,7 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 				<Ionicons 
 					name={sidebarVisibility === 'hidden' ? 'chevron-forward' : 'chevron-back'} 
 					size={24} 
-					color={themeColors.text}
+					color={'black'}
 				/>
 			</Pressable>
 			<SectionSidebar
@@ -179,6 +185,8 @@ const getStyles = (theme: any) => {
 	const { width } = Dimensions.get('window');
 	const isSmall = width < 1920;
 	const isDesktop = Platform.OS === 'web';
+
+	const translucentBackgroundColor = Color(theme.backgroundSecondary).alpha(0.3).toString();
 
 	return StyleSheet.create({
 		mainContainer: {
@@ -211,7 +219,7 @@ const getStyles = (theme: any) => {
 			position: 'absolute',
 			bottom: 160,
 			left: 0,
-			backgroundColor: theme.backgroundSecondary,
+			backgroundColor: translucentBackgroundColor,
 			borderTopRightRadius: 15,
 			borderBottomRightRadius: 15,
 			padding: 5,
