@@ -1,7 +1,7 @@
 // CustomCalendar.tsx
-import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Calendar } from 'react-native-calendars';
-import { StyleSheet, View, LayoutChangeEvent } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 import { darkCalendar, lightCalendar } from '@los/shared/src/styles/theme'; 

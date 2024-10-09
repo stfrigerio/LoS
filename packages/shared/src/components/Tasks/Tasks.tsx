@@ -31,7 +31,7 @@ const TasksHub: React.FC = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [activeScreen, setActiveScreen] = useState<'tasklist' | 'checklist' | 'canvas'>('tasklist');
     const [refreshTrigger, setRefreshTrigger] = useState(0);
-    const [screens, setScreens] = useState(['Task List', 'Checklist']);
+    const [screens, setScreens] = useState(['Task List', 'Checklist', 'Canvas']);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
     useEffect(() => {

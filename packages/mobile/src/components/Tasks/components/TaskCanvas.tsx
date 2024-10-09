@@ -54,6 +54,8 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
         getDayLayouts
     } = useTaskManagement(refreshTrigger, updateTask, deleteTask, refreshTasks);
 
+    const [isCalendarReady, setIsCalendarReady] = useState(false);
+
     const isDragging = useSharedValue(0);
 
     const animatedScrollViewStyle = useAnimatedStyle(() => ({
@@ -108,7 +110,7 @@ const TaskCanvas: React.FC<CanvasScreenProps> = ({
                         />
                     </View>
                 </View>
-                <DebugOverlay dayLayouts={getDayLayouts()} />
+                {/* <DebugOverlay dayLayouts={getDayLayouts()} /> */}
             </View>
             <AlertModal
                 isVisible={deleteModalVisible}
