@@ -8,7 +8,7 @@ import { AddObjectivesModal } from '@los/shared/src/components/modals/Objectives
 
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 
-import { UseObjectivesReturn, ExtendedObjectiveData } from '../types/ObjectivesSection';
+import { UseObjectivesReturn, ExtendedObjectiveData } from '../../types/ObjectivesSection';
 import { ObjectiveData } from '@los/shared/src/types/Objective';
 
 let useObjectives: UseObjectivesReturn
@@ -21,7 +21,7 @@ if (Platform.OS === 'web') {
 interface ObjectivesSectionProps {       
     currentDate: string;
     isModalVisible: boolean;
-    setIsModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
+    setIsModalVisible: (value: boolean) => void;
 }
 
 export const ObjectivesSection: React.FC<ObjectivesSectionProps> = ({ currentDate, isModalVisible, setIsModalVisible }) => {

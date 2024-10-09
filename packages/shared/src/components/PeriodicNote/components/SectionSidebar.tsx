@@ -1,23 +1,26 @@
 // SectionSidebar.tsx
 
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Dimensions, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Dimensions, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeStyles } from '../../../styles/useThemeStyles'; // Adjust the import path as necessary
+
+type SidebarVisibility = 'hidden' | 'icons' | 'extended';
 
 type SectionSidebarProps = {
 	sections: { id: string; title: string; icon?: string }[];
 	onSectionSelect: (id: string) => void;
 	activeSection: string;
+	visibility: SidebarVisibility;
 };
 
-const SectionSidebar: React.FC<SectionSidebarProps> = ({ sections, onSectionSelect, activeSection }) => {
+const SectionSidebar: React.FC<SectionSidebarProps> = ({ sections, onSectionSelect, activeSection, visibility }) => {
 	const { themeColors } = useThemeStyles();
 	let { height } = Dimensions.get('window');
-	height = height - 240;
+	height = height - 300;
 
-	const sidebarWidth = 50;
+	const sidebarWidth = visibility === 'extended' ? 150 : 50; // Adjust width based on visibility
 	const curveControlPoint = 10; // Adjust this to control the curve's shape
 
 	const path = `
@@ -32,32 +35,52 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({ sections, onSectionSele
 		Z
 	`;
 
+	const animatedWidth = React.useRef(new Animated.Value(0)).current;
+
+	React.useEffect(() => {
+		Animated.timing(animatedWidth, {
+			toValue: visibility === 'hidden' ? 0 : sidebarWidth,
+			duration: 300,
+			useNativeDriver: false,
+		}).start();
+	}, [visibility, sidebarWidth]);
+	
+	if (visibility === 'hidden') {
+		return null;
+	}
+
 	return (
-		<View style={styles.sidebarContainer}>
+		<Animated.View style={[styles.sidebarContainer, { width: animatedWidth }]}>
 			<Svg height={height} width={sidebarWidth} style={styles.sidebarShape}>
 				<Path d={path} fill={themeColors.backgroundSecondary} />
 			</Svg>
 			<View style={styles.sidebarContent}>
 				{sections.map((section) => (
-					<Pressable
-						key={section.id}
-						style={[
-							styles.button,
-						]}
-						onPress={() => onSectionSelect(section.id)}
-					>
-						{section.icon && (
+				<Pressable
+					key={section.id}
+					style={[styles.button, visibility === 'extended' && styles.extendedButton]}
+					onPress={() => onSectionSelect(section.id)}
+				>
+					{section.icon && (
 						<Ionicons
 							name={section.icon as any}
 							size={24}
 							color={activeSection === section.id ? themeColors.hoverColor : 'black'}
 						/>
-						)}
-					</Pressable>
+					)}
+					{visibility === 'extended' && (
+						<Text style={[
+							styles.buttonText, 
+							{ color: activeSection === section.id ? themeColors.hoverColor : 'black' }
+						]}>
+							{section.title}
+						</Text>
+					)}
+				</Pressable>
 				))}
 			</View>
-		</View>
-	);
+			</Animated.View>
+		);
 };
 
 const styles = StyleSheet.create({
@@ -89,6 +112,16 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		borderRadius: 25,
 		marginBottom: 15,
+	},
+	extendedButton: {
+		flexDirection: 'row',
+		width: 130,
+		justifyContent: 'flex-start',
+		paddingLeft: 10,
+	},
+	buttonText: {
+		marginLeft: 10,
+		fontSize: 14,
 	},
 });
 
