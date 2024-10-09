@@ -50,17 +50,17 @@ const getStyles = (theme: any) => {
 			flexWrap: 'wrap',
 			justifyContent: 'center',
 			marginBottom: 10,
-			marginRight: 20
+			marginLeft: 10
 		},
 		chartButton: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			padding: 8,
-			marginHorizontal: 3,
 			borderRadius: 5,
+			// borderWidth: 1
 		},
 		chartButtonText: {
-			marginLeft: 3,
+			marginLeft: 10,
 			fontSize: 12,
 			color: theme.textColor
 		},

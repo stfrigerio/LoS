@@ -87,7 +87,7 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 							</View>
 						</View>
 
-						<View style={styles.activeSectionContainer}>
+						<View>
 							<SectionRenderer
 								activeSection={activeSection}
 								dateState={dateState}
@@ -111,6 +111,7 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 				visibility={sidebarVisibility}
 				setSidebarVisibility={setSidebarVisibility}
 			/>
+			<View style={styles.verticalLine}></View>
 		</>
 	);
 };
@@ -146,9 +147,6 @@ const getStyles = (theme: any) => {
 			alignItems: 'center',
 			marginBottom: 20,
 		},
-		activeSectionContainer: {
-			marginTop: 20,
-		},
 		chevronButton: {
 			position: 'absolute',
 			top: 140,
@@ -159,6 +157,14 @@ const getStyles = (theme: any) => {
 			padding: 5,
 			zIndex: 1001,
 		},
+		verticalLine: {
+            position: 'absolute',
+            left: '50%',
+            top: 0,
+            bottom: 0,
+            width: 1,
+            backgroundColor: 'red', // Change the color as needed
+        },
 	});
 };
 

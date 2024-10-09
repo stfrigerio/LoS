@@ -115,16 +115,14 @@ const getStyles = (theme: any) => StyleSheet.create({
         alignItems: 'center',
         alignContent: 'center',
         justifyContent: 'center',
-        padding: 16,
-        paddingBottom: 0,
-        flexWrap: 'wrap',
+        padding: 8,
     },
     button: {
         padding: 5,
         marginHorizontal: 5,
     },
     buttonText: {
-        fontSize: 24,
+        fontSize: 20,
         color: theme.hoverColor,
     },
     currentPeriodText: {

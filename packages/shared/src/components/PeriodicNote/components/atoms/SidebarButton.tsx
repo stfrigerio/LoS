@@ -45,7 +45,7 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({
 					<Ionicons 
 						name={'chevron-forward'} 
 						size={24} 
-						color={'black'}
+						color={'gray'}
 					/>
 				</Pressable>
 			</Animated.View>

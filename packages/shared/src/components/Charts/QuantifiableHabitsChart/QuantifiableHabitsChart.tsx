@@ -142,7 +142,7 @@ const QuantifiableHabitsChart: React.FC<QuantifiableHabitsChartProps> = ({
 	}
 
 	return (
-		<View style={styles.container}>
+		<View>
 			<MemoizedChartToggle
 				availableViewTypes={availableViewTypes}
 				viewType={viewType}
@@ -155,8 +155,8 @@ const QuantifiableHabitsChart: React.FC<QuantifiableHabitsChartProps> = ({
 				activeHabits={activeHabits}
 			/>
 			{chartDimensions ? (
-				<Svg width={width} height={height}>
-					<G transform={`translate(${margin.left}, ${margin.top})`}>    
+				<Svg width={width} height={height + 15}>
+					<G transform={`translate(${margin.left + 15}, ${margin.top})`}>    
 						{Object.entries(paths).map(([habit, d]) => {
 							const color = getColor(habit);
 							return (
@@ -207,10 +207,6 @@ const getStyles = (theme: any) => {
 	const isDesktop = width > 768;
 
 	return StyleSheet.create({
-		container: {
-			marginVertical: 10,
-			backgroundColor: theme.backgroundColor,
-		},
 		svgContainer: {
 			flex: 1,
 			alignItems: 'center',
@@ -243,7 +239,7 @@ const getStyles = (theme: any) => {
 		loadingContainer: {
 			justifyContent: 'center',
 			alignItems: 'center',
-			height: 300, // Adjust as needed
+			height: 300,
 		},
 		loadingText: {
 			marginTop: 10,

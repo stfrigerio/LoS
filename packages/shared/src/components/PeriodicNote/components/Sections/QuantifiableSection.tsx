@@ -93,14 +93,27 @@ const QuantifiableSection: React.FC<QuantifiableSectionProps> = ({
         );
     }
 
+    const defaultViewType = (() => {
+        switch (periodType) {
+            case 'week':
+            case 'month':
+                return 'daily';
+            case 'quarter':
+            case 'year':
+                return 'weekly';
+            default:
+                return 'daily';
+        }
+    })();
+
     return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.container}>
             <QuantifiableHabitsChart 
                 userSettings={userSettingsQuantifiables}
                 data={quantifiableHabitsData} 
                 onOpenNote={openNote}
                 onOpenPeriodNote={openPeriodNote}
-                defaultViewType={'daily'}
+                defaultViewType={defaultViewType}
                 periodType={periodType}
                 width={chartWidth}
                 height={chartHeight}
