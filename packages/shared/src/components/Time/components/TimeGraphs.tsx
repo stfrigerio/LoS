@@ -3,7 +3,7 @@ import { View, Dimensions, StyleSheet, Platform, Text, ScrollView, Pressable } f
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 import SunburstChart from '@los/shared/src/components/Charts/Sunburst/SunburstChart';
-import EntriesList from '@los/shared/src/components/PeriodicNote/components/EntriesList';
+import EntriesList from '@los/shared/src/components/PeriodicNote/components/atoms/EntriesList';
 import FullScreenHeatmap from './FullScreenHeatmap';
 
 import { formatTimeEntries } from '@los/shared/src/components/PeriodicNote/helpers/dataTransformer';

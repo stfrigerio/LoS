@@ -37,13 +37,11 @@ const generateUUID = () => {
     }
 };
 
-
 export interface TextSectionProps {
     periodType: string;
     startDate: string;
     endDate: string;
 }
-
 
 const TextInputs: React.FC<TextSectionProps> = ({ periodType, startDate, endDate }) => {
     const { theme, themeColors, designs } = useThemeStyles();

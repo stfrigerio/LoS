@@ -80,7 +80,7 @@ const MusicPlayerControls: React.FC = () => {
 const getStyles = (themeColors: any) => StyleSheet.create({
     playerControls: {
         padding: 10,
-        backgroundColor: themeColors.backgroundSecondary,
+        backgroundColor: 'transparent',
         borderTopLeftRadius: 15,
         borderTopRightRadius: 15,
         borderBottomLeftRadius: 15,

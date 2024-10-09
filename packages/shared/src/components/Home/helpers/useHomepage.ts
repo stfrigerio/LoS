@@ -43,6 +43,8 @@ export interface HomepageSettings {
 	HideMoney?: { value: string };
 	HideNextObjective?: { value: string };
 	HideCarLocation?: { value: string };
+	HideTime?: { value: string };
+	HideMusic?: { value: string };
 }
 
 export const useHomepage = () => {
@@ -99,7 +101,6 @@ export const useHomepage = () => {
 				endDate: endDate,
 			});
 		} else {
-			console.log('about to open periodic note with startDate:', startDate, 'and endDate:', endDate);
 			navigate('periodicNote', {
 				startDate: startDate,
 				endDate: endDate,
@@ -157,6 +158,10 @@ export const useHomepage = () => {
 		navigate('music');
 	}, [navigate])
 
+	const openTime = useCallback(() => {
+		navigate('time');
+	}, [navigate])
+
 	let homepageSettings: HomepageSettings = {};
 
 	if (typeof useHomepageSettings === 'function') {
@@ -172,6 +177,8 @@ export const useHomepage = () => {
 			HideMoney: settings.HideMoney,
 			HideNextObjective: settings.HideNextObjective,
 			HideCarLocation: settings.HideCarLocation,
+			HideTime: settings.HideTime,
+			HideMusic: settings.HideMusic,
 		};
 	}
 
@@ -189,6 +196,7 @@ export const useHomepage = () => {
 		openCurrentWeek,
 		openCurrentMonth,
 		openMusic,
+		openTime,
 		homepageSettings,
 	};
 };

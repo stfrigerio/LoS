@@ -1,52 +1,29 @@
-import React, { useCallback } from 'react';
-import { useDrawerStatus } from '@react-navigation/drawer';
-import { View, StyleSheet, Pressable, Text } from 'react-native';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import React, { useMemo } from 'react';
+import { View, StyleSheet, } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 import TimeChart from './TimeChart'
 import MusicPlayerControls from '../Music/components/MusicPlayerControls';
 
-import { useHomepage } from '@los/shared/src/components/Home/helpers/useHomepage';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 
-type RootStackParamList = {
-    time: undefined;
-};
-
-const LeftPanel: React.FC<{ isDrawerOpen: boolean }> = ({ isDrawerOpen }) => {
-    const { openMusic } = useHomepage();
+const LeftPanel: React.FC<{ }> = ({ }) => {
     const { theme, themeColors, designs } = useThemeStyles();
-    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-    const navigate = useCallback((route: keyof RootStackParamList) => {
-        navigation.navigate(route);
-    }, [navigation]);
-
-    const handleTimeHubPress = useCallback(() => {
-        navigate('time');
-    }, [navigate]);
-
-    const styles = getStyles(themeColors, theme);
+    const styles = useMemo(() => getStyles(themeColors, theme), [themeColors, theme]);
 
     return (
         <View style={styles.container}>
             <BlurView 
-                intensity={80} 
+                intensity={60} 
                 tint={theme === 'dark' ? 'dark' : 'light'} 
-                style={StyleSheet.absoluteFill} 
+                style={[StyleSheet.absoluteFill, { zIndex: 1 }]} 
             />
             <View style={styles.content}>
                 <View style={styles.chartContainer}>
                     <TimeChart />
                 </View>
-                <Pressable style={styles.button} onPress={handleTimeHubPress}>
-                    <Text style={styles.buttonText}>Time 🕒</Text>
-                </Pressable>
-                <View style={styles.separator}/>
-                <Pressable style={styles.button} onPress={openMusic}>
-                    <Text style={styles.buttonText}>Music 🎧</Text>
-                </Pressable>
+
                 <View style={styles.musicControlsContainer}>
                     <MusicPlayerControls />
                 </View>
@@ -58,12 +35,13 @@ const LeftPanel: React.FC<{ isDrawerOpen: boolean }> = ({ isDrawerOpen }) => {
 const getStyles = (themeColors: any, theme: 'dark' | 'light') => StyleSheet.create({
     container: {
         flex: 1,
-        overflow: 'hidden', // Ensure blur doesn't extend beyond container
+        overflow: 'hidden',
     },
     content: {
         flex: 1,
         padding: 20,
         paddingTop: 50,
+        zIndex: 1000,
     },
     chartContainer: {
         borderColor: 'black',

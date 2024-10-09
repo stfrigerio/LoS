@@ -166,7 +166,7 @@ const getStyles = (theme: any) => StyleSheet.create({
 		borderColor: theme.borderColor,
 		borderRadius: 8,
 		color: theme.textColor,
-		marginTop: 60
+		marginTop: 37
 	},
 });
 

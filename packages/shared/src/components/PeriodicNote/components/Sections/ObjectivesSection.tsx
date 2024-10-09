@@ -25,8 +25,15 @@ interface ObjectivesSectionProps {
 }
 
 export const ObjectivesSection: React.FC<ObjectivesSectionProps> = ({ currentDate, isModalVisible, setIsModalVisible }) => {
-    //@ts-ignore //!
-    const { objectives, addObjective, toggleObjectiveCompletion, pillars, deleteObjective, refreshObjectives } = useObjectives(currentDate);
+    const { 
+        objectives, 
+        addObjective, 
+        toggleObjectiveCompletion, 
+        pillars, 
+        deleteObjective, 
+        refreshObjectives 
+        //@ts-ignore //!
+    } = useObjectives(currentDate);
     const { themeColors } = useThemeStyles();
     const styles = getStyles(themeColors);
 
@@ -123,6 +130,12 @@ export const ObjectivesSection: React.FC<ObjectivesSectionProps> = ({ currentDat
                         </View>
                     </Pressable>
                 ))}
+                <Pressable
+                    onPress={() => setIsModalVisible(true)}
+                    style={styles.addButton}
+                >
+                    <Text style={styles.addButtonText}>Add Objective</Text>
+                </Pressable>
             </View>
             {deleteModalVisible && (
                 <AlertModal
@@ -212,5 +225,16 @@ const getStyles = (themeColors: any) => StyleSheet.create({
     fakeIcon: {
         width: 20,
         height: 20,
+    },
+    addButton: {
+        padding: 15,
+        borderWidth: 1,
+        borderColor: themeColors.borderColor,
+        borderRadius: 10,
+        alignSelf: 'center',
+        marginTop: 10,
+    },
+    addButtonText: {
+        color: themeColors.textColor,
     },
 });

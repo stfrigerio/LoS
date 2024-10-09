@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Dimensions, StyleSheet, Platform, Text, Pressable } from 'react-native';
 
-import EntriesList from '../EntriesList';
+import EntriesList from '../atoms/EntriesList';
 import SunburstChart from '../../../Charts/Sunburst/SunburstChart';
 import TimeHeatmap from '../../../Charts/Heatmaps/TimeHeatmap/TimeHeatmap';
 

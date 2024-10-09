@@ -12,7 +12,6 @@ import { processHourData } from '@los/shared/src/components/Charts/Sunburst/data
 import { processTimerSpanningMidnight } from './helpers/chartDataProcessing';
 import { useColors } from '@los/mobile/src/components/useColors';
 
-import EntriesList from '@los/shared/src/components/PeriodicNote/components/EntriesList';
 import SunburstChart, { SunBurstRecord} from '@los/shared/src/components/Charts/Sunburst/SunburstChart';
 import HoursSunburst, { HourData } from '@los/shared/src/components/Charts/Sunburst/24hSunburstChart';
 import { TimeData } from '@los/shared/src/types/Time';

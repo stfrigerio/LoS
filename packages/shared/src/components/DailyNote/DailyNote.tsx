@@ -13,7 +13,7 @@ import {
 	DailyTasks
 } from './components'
 
-import TimeBox from '../PeriodicNote/components/TimeBox'
+import TimeBox from '../PeriodicNote/components/atoms/TimeBox'
 import DateNavigation from '../PeriodicNote/components/DateNavigation';
 import ImagePickerComponent from './components/ImagePickerComponent';
 

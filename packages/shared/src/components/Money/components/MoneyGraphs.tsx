@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Dimensions, StyleSheet, Platform, Text, ScrollView } from 'react-native';
 
 import SunburstChart from '@los/shared/src/components/Charts/Sunburst/SunburstChart';
-import EntriesList from '@los/shared/src/components/PeriodicNote/components/EntriesList';
+import EntriesList from '@los/shared/src/components/PeriodicNote/components/atoms/EntriesList';
 
 import { formatMoneyEntries } from '@los/shared/src/components/PeriodicNote/helpers/dataTransformer';
 import { processMoneySunburstData } from '@los/shared/src/components/PeriodicNote/helpers/dataProcessing';

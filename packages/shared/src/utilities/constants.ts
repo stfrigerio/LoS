@@ -18,6 +18,8 @@ export const defaultAppSettings = {
     HideMoods: false,
     HideLibrary: false,
     HideMoney: false,
+    HideTime: false,
+    HideMusic: false,
     HideCarLocation: false,
     // right panel
     RightPanelView: "DailyNote",

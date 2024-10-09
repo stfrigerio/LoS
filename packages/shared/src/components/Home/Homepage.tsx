@@ -2,7 +2,17 @@ import React, { FC, useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, ImageBackground, ScrollView, Platform, Animated, Dimensions } from 'react-native';
 import  { format } from 'date-fns';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCog, faBook, faCommentDots, faJournalWhills, faCircleCheck, faUser, faMoneyBill } from '@fortawesome/free-solid-svg-icons';
+import { 
+    faCog, 
+    faBook, 
+    faCommentDots, 
+    faJournalWhills, 
+    faCircleCheck, 
+    faUser, 
+    faMoneyBill, 
+    faClock, 
+    faMusic 
+} from '@fortawesome/free-solid-svg-icons';
 
 import { getWeekNumber } from '@los/shared/src/utilities/timeUtils';
 import { useHomepage } from './helpers/useHomepage';
@@ -49,6 +59,8 @@ const Homepage: FC = () => {
         openMoods,
         openTasks,
         openCurrentWeek,
+        openTime,
+        openMusic,
         homepageSettings
     } = useHomepage();
 
@@ -159,6 +171,16 @@ const Homepage: FC = () => {
                                         <FontAwesomeIcon style={styles.buttonText} icon={faMoneyBill} size={20} color={themeColors.borderColor} />
                                     </Pressable>
                                 )}
+                                {shouldShow(homepageSettings.HideTime) && (
+                                    <Pressable style={styles.button} onPress={() => openTime()}>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faClock} size={20} color={themeColors.borderColor} />
+                                    </Pressable>
+                                )}
+                                {shouldShow(homepageSettings.HideMusic) && (
+                                    <Pressable style={styles.button} onPress={() => openMusic()}>
+                                        <FontAwesomeIcon style={styles.buttonText} icon={faMusic} size={20} color={themeColors.borderColor} />
+                                    </Pressable>
+                                )}
                             </View>
                         </View>
                     </View>
@@ -224,7 +246,6 @@ const getStyles = (theme: any) => {
             flex: 1,
             alignItems: 'center',
         },
-
         buttonContainers: {
             width: isSmall ? '75%' : '50%',
         },
