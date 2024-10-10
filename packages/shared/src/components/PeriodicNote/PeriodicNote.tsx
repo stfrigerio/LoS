@@ -111,7 +111,7 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 				visibility={sidebarVisibility}
 				setSidebarVisibility={setSidebarVisibility}
 			/>
-			<View style={styles.verticalLine}></View>
+			{/* <View style={styles.verticalLine}></View> */}
 		</>
 	);
 };
