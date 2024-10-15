@@ -14,6 +14,7 @@ import { useColors } from '@los/mobile/src/components/useColors';
 
 import SunburstChart, { SunBurstRecord} from '@los/shared/src/components/Charts/Sunburst/SunburstChart';
 import HoursSunburst, { HourData } from '@los/shared/src/components/Charts/Sunburst/24hSunburstChart';
+import EntriesList from '@los/shared/src/components/PeriodicNote/components/atoms/EntriesList';
 import { TimeData } from '@los/shared/src/types/Time';
 
 function TimeSunburstChart() {
@@ -169,24 +170,24 @@ function TimeSunburstChart() {
                 {showHoursSunburst && is12HourView ? <Text style={styles.ampmText}>({currentHalfDay.toLowerCase()})</Text> : null}
                 <Text style={designs.text.text}>{totalHours.toFixed(2)} hrs</Text>
                 {showHoursSunburst ? (
-                    <>
+                    <View style={{ marginTop: 10 }}>
                         <Switch
                             value={is12HourView}
                             onValueChange={(value) => setIs12HourView(value)}
                         />
-                    </>
+                    </View>
                 ) : (
-                    <>
+                    <View style={{ marginTop: 10 }}>
                         <Switch
                             value={isWeekly}
                             onValueChange={(value) => setIsWeekly(value)}
                         />
-                    </>
+                    </View>
                 )}
             </View>
-            {/* <View style={styles.entriesContainer}> 
+            <View style={styles.entriesContainer}> 
                 <EntriesList entries={timeEntries} title="Time Entries" valueLabel="" />
-            </View> */}
+            </View>
         </View>
     );  
 }

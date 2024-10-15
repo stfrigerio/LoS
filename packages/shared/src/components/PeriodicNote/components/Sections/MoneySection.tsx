@@ -1,7 +1,10 @@
 import React, { useMemo } from 'react';
 import { View, Dimensions, StyleSheet, Platform, Text } from 'react-native';
+
 import SunburstChart from '../../../Charts/Sunburst/SunburstChart';
 import EntriesList from '../atoms/EntriesList';
+import SummaryItem from '../atoms/SummaryItem';
+
 import { formatMoneyEntries } from '../../helpers/dataTransformer';
 import { processMoneySunburstData } from '../../helpers/dataProcessing';
 import { calculateMoneySummary } from '../../helpers/moneyHelpers';
@@ -67,15 +70,17 @@ const MoneySection: React.FC<ChartSectionProps> = ({
             <View style={styles.summaryContainer}>
                 <Text style={styles.summaryTitle}>Money Summary</Text>
                 <View style={styles.summaryGrid}>
-                    <SummaryItem 
+                <SummaryItem 
                         title="Total Expenses" 
                         value={`€${moneySummary.totalExpenses.toFixed(2)}`}
                         change={moneySummary.totalExpensesChange}
+                        isPercentage={true}
                     />
                     <SummaryItem 
                         title="Avg. Spent/Day" 
                         value={`€${moneySummary.averageSpentPerDay}`}
                         change={moneySummary.averageSpentPerDayChange}
+                        isPercentage={false}
                     />
                     <SummaryItem title="Most Common Tag" value={moneySummary.mostCommonTag} />
                     <SummaryItem title="Most Expensive Tag" value={moneySummary.mostExpensiveTag} />
@@ -87,24 +92,7 @@ const MoneySection: React.FC<ChartSectionProps> = ({
     );
 };
 
-const SummaryItem = ({ title, value, change }: { title: string; value: string; change?: number }) => {
-    const { themeColors } = useThemeStyles();
-    const styles = getStyles(themeColors);
-    
-    return (
-        <View style={styles.summaryItem}>
-            <Text style={styles.summaryItemTitle}>{title}</Text>
-            <View style={styles.summaryItemValueContainer}>
-                <Text style={styles.summaryItemValue}>{value}</Text>
-                {change !== undefined && (
-                    <Text style={[styles.changeText, { color: change >= 0 ? 'red' : 'green' }]}>
-                        {change >= 0 ? '+' : ''}{change.toFixed(1)}%
-                    </Text>
-                )}
-            </View>
-        </View>
-    );
-};
+
 const getStyles = (theme: any) => {
     const { width } = Dimensions.get('window');
     const isDesktop = Platform.OS === 'web';
@@ -136,23 +124,6 @@ const getStyles = (theme: any) => {
             flexWrap: 'wrap',
             justifyContent: 'space-between',
         },
-        summaryItem: {
-            width: '48%',
-            marginBottom: 15,
-            padding: 10,
-            borderRadius: 8,
-            backgroundColor: theme.backgroundSecondary,
-        },
-        summaryItemTitle: {
-            fontSize: 14,
-            color: 'gray',
-            marginBottom: 5,
-        },
-        summaryItemValue: {
-            fontSize: 16,
-            fontWeight: 'bold',
-            color: theme.textColor,
-        },
         trendChartContainer: {
             marginBottom: 20,
         },
@@ -167,11 +138,6 @@ const getStyles = (theme: any) => {
             color: 'gray',
             fontSize: 16,
             textAlign: 'center',
-        },
-        summaryItemValueContainer: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
         },
         changeText: {
             fontSize: 12,

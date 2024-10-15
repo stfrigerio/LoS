@@ -144,7 +144,6 @@ const getStyles = (theme: any) => {
 			flexDirection: 'column',
 			justifyContent: 'space-between',
 			alignItems: 'center',
-			marginBottom: 20,
 		},
 		chevronButton: {
 			position: 'absolute',

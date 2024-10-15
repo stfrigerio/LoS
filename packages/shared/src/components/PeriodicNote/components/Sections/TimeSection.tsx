@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { View, Dimensions, StyleSheet, Platform, Text, Pressable } from 'react-native';
+import { View, Dimensions, StyleSheet, Platform, Text, Pressable, Switch } from 'react-native';
 
 import EntriesList from '../atoms/EntriesList';
 import SunburstChart from '../../../Charts/Sunburst/SunburstChart';
 import TimeHeatmap from '../../../Charts/Heatmaps/TimeHeatmap/TimeHeatmap';
-
+import SummaryItem from '../atoms/SummaryItem';
 import { formatTimeEntries } from '../../helpers/dataTransformer';
 import { processTimeSunburstData } from '../../helpers/dataProcessing';
 import { processMultiDayHourData } from '@los/shared/src/components/Charts/Sunburst/dataProcessing';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
-
+import { calculateTimeSummary } from '../../helpers/timeHelpers';
 
 let usePeriodicData: any;
 if (Platform.OS === 'web') {
@@ -32,11 +32,24 @@ const ChartSection: React.FC<ChartSectionProps> = ({
     const { theme, themeColors, designs } = useThemeStyles();
     const styles = getStyles(themeColors);
     const [isHeatmapLoaded, setIsHeatmapLoaded] = useState(false);
+    const [excludeSleep, setExcludeSleep] = useState(false);
 
     const { current: { timeData }, previous: { timeData: previousTimeData } } = usePeriodicData(startDate, endDate);
-    const timeSunburstData = useMemo(() => processTimeSunburstData(timeData), [timeData]);
-    const timeHeatmapData = useMemo(() => processMultiDayHourData(timeData), [timeData]);
-    
+
+    const filteredTimeData = useMemo(() => {
+        if (!excludeSleep) return timeData;
+        return timeData.filter((entry: any) => entry.tag.toLowerCase() !== 'sleep');
+    }, [timeData, excludeSleep]);
+
+    const filteredPreviousTimeData = useMemo(() => {
+        if (!excludeSleep) return previousTimeData;
+        return previousTimeData.filter((entry: any) => entry.tag.toLowerCase() !== 'sleep');
+    }, [previousTimeData, excludeSleep]);
+
+    const timeSunburstData = useMemo(() => processTimeSunburstData(filteredTimeData), [filteredTimeData]);
+    const timeHeatmapData = useMemo(() => processMultiDayHourData(filteredTimeData), [filteredTimeData]);
+    const timeSummary = useMemo(() => calculateTimeSummary(filteredTimeData, filteredPreviousTimeData), [filteredTimeData, filteredPreviousTimeData]);
+
     const timeHeatmapDataCurrentPeriod = useMemo(() => {
         return timeHeatmapData.filter((entry: any) => {
             const entryDate = new Date(entry.date);
@@ -50,10 +63,9 @@ const ChartSection: React.FC<ChartSectionProps> = ({
     const chartWidth = width * 0.8;
     const chartHeight = Dimensions.get('window').height * 0.3;
 
-    
     if (!timeSunburstData || !timeEntries) {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <Text style={{ color: 'gray' }}>No Time data available.</Text>
             </View>
         );
@@ -61,6 +73,15 @@ const ChartSection: React.FC<ChartSectionProps> = ({
 
     return (
         <View style={styles.container}>
+            <View style={styles.toggleContainer}>
+                <Text style={styles.toggleLabel}>Exclude Sleep</Text>
+                <Switch
+                    value={excludeSleep}
+                    onValueChange={setExcludeSleep}
+                    trackColor={{ false: theme.switchTrackColor, true: theme.switchTrackColorOn }}
+                    thumbColor={excludeSleep ? theme.switchThumbColorOn : theme.switchThumbColor}
+                />
+            </View>
             <View >
                 <SunburstChart
                     data={timeSunburstData}
@@ -77,7 +98,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({
                 </Pressable>
             )}
             {isHeatmapLoaded && (
-                <View style={styles.container}>
+                <View>
                     <TimeHeatmap
                         data={timeHeatmapDataCurrentPeriod}
                         width={chartWidth}
@@ -85,6 +106,28 @@ const ChartSection: React.FC<ChartSectionProps> = ({
                     />
                 </View>
             )}
+            <View style={styles.summaryContainer}>
+                <Text style={styles.summaryTitle}>Time Summary</Text>
+                <View style={styles.summaryGrid}>
+                    <SummaryItem 
+                        title="Total Time" 
+                        value={timeSummary.totalTime}
+                        // change={timeSummary.totalTimeChange}
+                        // isPercentage={true}
+                        // isTime={true}
+                    />
+                    <SummaryItem 
+                        title="Time Tracked Per Day" 
+                        value={timeSummary.timeTrackedPerDay}
+                        // change={timeSummary.timeTrackedPerDayChange}
+                        // isPercentage={false}
+                        // isTime={true}
+                    />
+                    <SummaryItem title="Most Common Tag" value={timeSummary.mostCommonTag} />
+                    <SummaryItem title="Longest Single Timer" value={timeSummary.longestSingleEntry} />
+                    <SummaryItem title="Timers" value={timeSummary.numberOfTimers.toString()} />
+                </View>
+            </View>
         </View>
     );
 };
@@ -97,7 +140,19 @@ const getStyles = (theme: any) => {
         container: {
             flex: 1,
             padding: 20,
+            paddingTop: 0,
             backgroundColor: theme.backgroundColor,
+        },
+        toggleContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 10,
+        },
+        toggleLabel: {
+            marginRight: 10,
+            fontSize: 16,
+            color: theme.textColor,
         },
         loadHeatmapButton: {
             backgroundColor: theme.buttonColor,
@@ -111,6 +166,23 @@ const getStyles = (theme: any) => {
             color: theme.textColorItalic,
             fontSize: 16,
             fontStyle: 'italic',
+        },
+        summaryContainer: {
+            marginBottom: 20,
+            padding: 15,
+            borderRadius: 10,
+        },
+        summaryTitle: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            marginBottom: 15,
+            color: theme.textColor,
+            textAlign: 'center',
+        },
+        summaryGrid: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
         },
     });
 };

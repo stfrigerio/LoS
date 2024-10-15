@@ -34,7 +34,7 @@ export const calculateMoneySummary = (currentMoneyData: MoneyData[], previousMon
     };
 
     const totalExpensesChange = calculatePercentageChange(current.totalExpenses, previous.totalExpenses);
-    const averageSpentPerDayChange = calculatePercentageChange(current.averageSpentPerDay, previous.averageSpentPerDay);
+    const averageSpentPerDayChange = current.averageSpentPerDay - previous.averageSpentPerDay;
 
     const mostCommonTag = Object.entries(current.tagCounts).length > 0
         ? Object.entries(current.tagCounts).reduce((a, b) => a[1] > b[1] ? a : b)[0]

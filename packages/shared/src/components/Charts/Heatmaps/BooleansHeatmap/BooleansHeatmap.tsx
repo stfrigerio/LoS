@@ -61,14 +61,14 @@ const BooleansHeatmap: React.FC<HeatmapChartProps> = ({
     return (
         <View style={{ width: chartWidth, height: chartHeight + 30, marginVertical: 20 }}>
             <Svg width={chartWidth} height={chartHeight + 40}>
-            {MONTHS.map((month, index) => {
+                {MONTHS.map((month, index) => {
                     const firstDayOfMonth = new Date(startDate.getFullYear(), index, 1);
                     const weekIndex = Math.floor((firstDayOfMonth.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
                     return (
                         <SvgText
                             key={month}
                             x={weekIndex * (cellSize + cellGap) + 45 + cellSize / 2}
-                            y={0}
+                            y={10}
                             fontSize={10}
                             fill={themeColors.textColor}
                         >

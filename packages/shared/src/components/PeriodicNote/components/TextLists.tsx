@@ -22,7 +22,7 @@ const TextLists: React.FC<TextListsProps> = ({ startDate, endDate }) => {
   const { theme, themeColors, designs } = useThemeStyles();
   const styles = getStyles(themeColors);
 
-  const { dailyTextData } = usePeriodicData(startDate, endDate);
+  const { current: { dailyTextData } } = usePeriodicData(startDate, endDate);
 
   const containerStyles = {
     success: 'successesContainer',
