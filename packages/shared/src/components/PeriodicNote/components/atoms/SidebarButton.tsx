@@ -43,8 +43,8 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({
 					onLongPress={() => toggleSidebarVisibility('extended')}
 				>
 					<Ionicons 
-						name={'chevron-forward'} 
-						size={24} 
+						name={'chevron-back'} 
+						size={28} 
 						color={'gray'}
 					/>
 				</Pressable>
@@ -56,10 +56,10 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({
 const styles = StyleSheet.create({
 	chevronButton: {
 		position: 'absolute',
-		top: 140,
-		left: 0,
-		borderTopRightRadius: 15,
-		borderBottomRightRadius: 15,
+		bottom: 40,
+		right: 0,
+		borderTopLeftRadius: 15,
+		borderBottomLeftRadius: 15,
 		padding: 5,
 		zIndex: 1001,
 	},

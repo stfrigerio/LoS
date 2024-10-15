@@ -109,7 +109,6 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 				onSectionSelect={setActiveSection}
 				activeSection={activeSection}
 				visibility={sidebarVisibility}
-				setSidebarVisibility={setSidebarVisibility}
 			/>
 			{/* <View style={styles.verticalLine}></View> */}
 		</>

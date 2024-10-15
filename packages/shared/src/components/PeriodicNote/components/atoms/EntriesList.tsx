@@ -48,11 +48,10 @@ const EntriesList: React.FC<EntriesListProps> = ({ entries, title, valueLabel })
 const getStyles = (theme: any) => StyleSheet.create({
 	container: {
 		marginTop: 10,
-		// borderWidth: 1,
-		// borderColor: 'red'
 	},
 	toggleButton: {
 		padding: 10,
+		// marginLeft: 10, //^ 
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginBottom: 10,

@@ -35,7 +35,7 @@ const BooleanSection: React.FC<BooleanSectionProps> = ({
     const chartWidth = width * 0.8;
     const chartHeight = 200; // Adjust as needed
 
-    const { dailyNoteData, userSettingsBooleans } = usePeriodicData(startDate, endDate);
+    const { current: { dailyNoteData, userSettingsBooleans } } = usePeriodicData(startDate, endDate);
 
     const booleanItems = useMemo(() => [
         { label: 'None', value: '' },

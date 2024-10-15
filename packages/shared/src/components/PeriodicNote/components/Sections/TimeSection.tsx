@@ -33,7 +33,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({
     const styles = getStyles(themeColors);
     const [isHeatmapLoaded, setIsHeatmapLoaded] = useState(false);
 
-    const { timeData } = usePeriodicData(startDate, endDate);
+    const { current: { timeData }, previous: { timeData: previousTimeData } } = usePeriodicData(startDate, endDate);
     const timeSunburstData = useMemo(() => processTimeSunburstData(timeData), [timeData]);
     const timeHeatmapData = useMemo(() => processMultiDayHourData(timeData), [timeData]);
     
@@ -60,8 +60,8 @@ const ChartSection: React.FC<ChartSectionProps> = ({
     }
 
     return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <View>
+        <View style={styles.container}>
+            <View >
                 <SunburstChart
                     data={timeSunburstData}
                     width={chartWidth}
@@ -77,7 +77,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({
                 </Pressable>
             )}
             {isHeatmapLoaded && (
-                <View>
+                <View style={styles.container}>
                     <TimeHeatmap
                         data={timeHeatmapDataCurrentPeriod}
                         width={chartWidth}
@@ -96,8 +96,8 @@ const getStyles = (theme: any) => {
     return StyleSheet.create({
         container: {
             flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
+            padding: 20,
+            backgroundColor: theme.backgroundColor,
         },
         loadHeatmapButton: {
             backgroundColor: theme.buttonColor,

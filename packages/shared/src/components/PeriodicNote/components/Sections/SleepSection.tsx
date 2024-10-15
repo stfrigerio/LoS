@@ -34,7 +34,7 @@ const SleepSection: React.FC<ChartSectionProps> = ({
     const { theme, themeColors, designs } = useThemeStyles();
     const styles = getStyles(themeColors);
 
-    const { dailyNoteData } = usePeriodicData(startDate, endDate);
+    const { current: { dailyNoteData } } = usePeriodicData(startDate, endDate);
     const sleepData = useMemo(() => {
         if (dailyNoteData) {
             return processSleepData(dailyNoteData);

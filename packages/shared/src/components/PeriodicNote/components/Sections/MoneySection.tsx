@@ -27,13 +27,20 @@ const MoneySection: React.FC<ChartSectionProps> = ({
 }) => {
     const { theme, themeColors, designs } = useThemeStyles();
     const styles = getStyles(themeColors);
-    const { moneyData } = usePeriodicData(startDate, endDate);
-    const moneySunburstData = useMemo(() => processMoneySunburstData(moneyData), [moneyData]);
+    // Destructure both current and previous moneyData
+    const { 
+        current: { moneyData: currentMoneyData },
+        previous: { moneyData: previousMoneyData }
+    } = usePeriodicData(startDate, endDate);
+
+    const moneySunburstData = useMemo(() => processMoneySunburstData(currentMoneyData), [currentMoneyData]);
     const moneyEntries = formatMoneyEntries(moneySunburstData, tagColors);
+    
     const { width } = Dimensions.get('window');
     const chartWidth = width * 0.8;
     const chartHeight = Dimensions.get('window').height * 0.3;
-    const moneySummary = useMemo(() => calculateMoneySummary(moneyData, startDate, endDate), [moneyData, startDate, endDate]);
+    
+    const moneySummary = useMemo(() => calculateMoneySummary(currentMoneyData, previousMoneyData, startDate, endDate), [currentMoneyData, previousMoneyData, startDate, endDate]);
 
     if (!moneySunburstData || !moneyEntries) {
         return (
@@ -60,30 +67,44 @@ const MoneySection: React.FC<ChartSectionProps> = ({
             <View style={styles.summaryContainer}>
                 <Text style={styles.summaryTitle}>Money Summary</Text>
                 <View style={styles.summaryGrid}>
-                    <SummaryItem title="Total Expenses" value={`€${moneySummary.totalExpenses.toFixed(2)}`} />
+                    <SummaryItem 
+                        title="Total Expenses" 
+                        value={`€${moneySummary.totalExpenses.toFixed(2)}`}
+                        change={moneySummary.totalExpensesChange}
+                    />
+                    <SummaryItem 
+                        title="Avg. Spent/Day" 
+                        value={`€${moneySummary.averageSpentPerDay}`}
+                        change={moneySummary.averageSpentPerDayChange}
+                    />
                     <SummaryItem title="Most Common Tag" value={moneySummary.mostCommonTag} />
+                    <SummaryItem title="Most Expensive Tag" value={moneySummary.mostExpensiveTag} />
                     <SummaryItem title="Transactions" value={moneySummary.transactionCount.toString()} />
-                    <SummaryItem title="Avg. Spent/Day" value={`€${moneySummary.averageSpentPerDay}`} />
+                    <SummaryItem title="Most Expensive Transaction" value={moneySummary.singleMostExpensiveTransaction} />
                 </View>
             </View>
-
-
         </View>
     );
 };
 
-const SummaryItem = ({ title, value }: { title: string; value: string }) => {
+const SummaryItem = ({ title, value, change }: { title: string; value: string; change?: number }) => {
     const { themeColors } = useThemeStyles();
     const styles = getStyles(themeColors);
     
     return (
         <View style={styles.summaryItem}>
             <Text style={styles.summaryItemTitle}>{title}</Text>
-            <Text style={styles.summaryItemValue}>{value}</Text>
+            <View style={styles.summaryItemValueContainer}>
+                <Text style={styles.summaryItemValue}>{value}</Text>
+                {change !== undefined && (
+                    <Text style={[styles.changeText, { color: change >= 0 ? 'red' : 'green' }]}>
+                        {change >= 0 ? '+' : ''}{change.toFixed(1)}%
+                    </Text>
+                )}
+            </View>
         </View>
     );
 };
-
 const getStyles = (theme: any) => {
     const { width } = Dimensions.get('window');
     const isDesktop = Platform.OS === 'web';
@@ -124,13 +145,13 @@ const getStyles = (theme: any) => {
         },
         summaryItemTitle: {
             fontSize: 14,
-            color: theme.secondaryTextColor,
+            color: 'gray',
             marginBottom: 5,
         },
         summaryItemValue: {
             fontSize: 16,
             fontWeight: 'bold',
-            color: theme.primaryTextColor,
+            color: theme.textColor,
         },
         trendChartContainer: {
             marginBottom: 20,
@@ -139,13 +160,23 @@ const getStyles = (theme: any) => {
             fontSize: 18,
             fontWeight: 'bold',
             marginBottom: 10,
-            color: theme.primaryTextColor,
+            color: theme.textColor,
             textAlign: 'center',
         },
         noDataText: {
-            color: theme.secondaryTextColor,
+            color: 'gray',
             fontSize: 16,
             textAlign: 'center',
+        },
+        summaryItemValueContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        changeText: {
+            fontSize: 12,
+            fontWeight: 'bold',
+            marginLeft: 5,
         },
     });
 };

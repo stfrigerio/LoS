@@ -15,7 +15,6 @@ type SectionSidebarProps = {
 	onSectionSelect: (id: string) => void;
 	activeSection: string;
 	visibility: SidebarVisibility;
-	setSidebarVisibility: React.Dispatch<React.SetStateAction<SidebarVisibility>>;
 };
 
 const SectionSidebar: React.FC<SectionSidebarProps> = ({
@@ -23,7 +22,6 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 	onSectionSelect,
 	activeSection,
 	visibility,
-	setSidebarVisibility
 }) => {
 	const { themeColors } = useThemeStyles();
 
@@ -63,14 +61,14 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 	const totalHeight = sections.length * itemHeight;
 	
 	const path = `
-		M0,${totalHeight}
-		C0,${totalHeight - 10} 10,${totalHeight - 10} ${curveControlPoint},${totalHeight - 10}
-		L${sidebarWidth - curveControlPoint},${totalHeight - 10}
-		Q${sidebarWidth},${totalHeight - 10} ${sidebarWidth},${totalHeight - 20}
-		L${sidebarWidth},20
-		Q${sidebarWidth},10 ${sidebarWidth - curveControlPoint},10
-		L${curveControlPoint},10
-		C10,10 0,10 0,0
+		M${sidebarWidth},${totalHeight}
+		C${sidebarWidth},${totalHeight - 10} ${sidebarWidth - 10},${totalHeight - 10} ${sidebarWidth - curveControlPoint},${totalHeight - 10}
+		L${curveControlPoint},${totalHeight - 10}
+		Q0,${totalHeight - 10} 0,${totalHeight - 20}
+		L0,20
+		Q0,10 ${curveControlPoint},10
+		L${sidebarWidth - curveControlPoint},10
+		C${sidebarWidth - 10},10 ${sidebarWidth},10 ${sidebarWidth},0
 		Z
 	`;
 
@@ -88,7 +86,7 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 		return null;
 	}
 
-	let translucentBackgroundColor
+	let translucentBackgroundColor: any;
 
 	if (visibility !== 'extended') {
 		translucentBackgroundColor = Color(themeColors.backgroundSecondary).alpha(0.4).toString();
@@ -138,9 +136,9 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 const styles = StyleSheet.create({
 	sidebarContainer: {
 		position: 'absolute',
-		left: 0,
-		top: 180,
-		bottom: 0,
+		right: 0,
+		// top: 240,
+		bottom: 80,
 		width: 50,
 		justifyContent: 'center',
 		alignItems: 'center',

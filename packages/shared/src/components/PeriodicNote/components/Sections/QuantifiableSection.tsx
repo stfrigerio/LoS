@@ -37,8 +37,8 @@ const QuantifiableSection: React.FC<QuantifiableSectionProps> = ({
     const chartHeight = Dimensions.get('window').height * 0.3;
 
     const {
-        dailyNoteData,
-        userSettingsQuantifiables
+        current: { dailyNoteData, userSettingsQuantifiables },
+        previous: { dailyNoteData: previousDailyNoteData, userSettingsQuantifiables: previousUserSettingsQuantifiables }
     } = usePeriodicData(startDate, endDate);
     
     const quantifiableHabitsData = useMemo(() => {
