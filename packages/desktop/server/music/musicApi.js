@@ -2,6 +2,7 @@ const fs = require('fs');
 const fsPromises = require('fs').promises;
 const path = require('path');
 const MusicSync = require('./musicSync');
+const contentDisposition = require('content-disposition');
 const { logger } = require('../../src/electron/main/logger');
 
 const musicLibraryPath = path.join(__dirname, '../../../../musicLibrary');
@@ -73,7 +74,7 @@ module.exports = {
             // Set appropriate headers
             res.setHeader('Content-Type', 'audio/mpeg');
             res.setHeader('Content-Length', stats.size);
-            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+            res.setHeader('Content-Disposition', contentDisposition(fileName));
             
             // Stream the file
             const fileStream = fs.createReadStream(filePath);
