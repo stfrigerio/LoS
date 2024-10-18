@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, ScrollView, BackHandler, Switch } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ScrollView, BackHandler, Switch, TextInput } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faStar, faTrash } from '@fortawesome/free-solid-svg-icons';
 
@@ -19,6 +19,8 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
     const { themeColors, designs } = useThemeStyles();
     const [currentRating, setCurrentRating] = useState(item.rating);
     const styles = getStyles(themeColors);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(item.title);
 
     const handleDelete = async () => {
         onDelete(item);
@@ -80,6 +82,15 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
         const updatedItem = { ...item, rating: newRating };
         await databaseManagers.library.upsert(updatedItem);
         updateItem(updatedItem);
+    };
+
+    const handleTitleEdit = async () => {
+        if (isEditingTitle) {
+            const updatedItem = { ...item, title: editedTitle };
+            await databaseManagers.library.upsert(updatedItem);
+            updateItem(updatedItem);
+        }
+        setIsEditingTitle(!isEditingTitle);
     };
 
     const renderRating = (rating: number) => (
@@ -192,7 +203,19 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
         <ScrollView style={styles.container}>
             <Image source={{ uri: ensureHttpsUrl(item.mediaImage) }} style={styles.poster} />
             <View style={styles.details}>
-                <Text style={styles.title}>{item.title}</Text>
+                <Pressable onPress={handleTitleEdit}>
+                    {isEditingTitle ? (
+                        <TextInput
+                            style={[styles.title, styles.titleInput]}
+                            value={editedTitle}
+                            onChangeText={setEditedTitle}
+                            onBlur={handleTitleEdit}
+                            autoFocus
+                        />
+                    ) : (
+                        <Text style={styles.title}>{item.title}</Text>
+                    )}
+                </Pressable>
                 {renderRating(currentRating)}
                 <View style={styles.divider} />
                 {renderCommonDetails()}
@@ -229,6 +252,11 @@ const getStyles = (theme: any) => StyleSheet.create({
         fontWeight: 'bold',
         color: theme.textColorBold,
         marginBottom: 10,
+    },
+    titleInput: {
+        borderBottomWidth: 1,
+        borderBottomColor: theme.borderColor,
+        paddingBottom: 5,
     },
     ratingContainer: {
         flexDirection: 'row',
