@@ -82,18 +82,14 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
                 />
             );
         case 'gpt':
-            if (dateState.periodType !== 'week') return null;
-            return (
-                <GPTSection
-                    startDate={dateState.startDate}
-                    endDate={dateState.endDate}
-                    currentDate={dateState.formattedDate}
-                />
-            );
-        case 'text':
-            if (dateState.periodType !== 'week') return null;
+            if (dateState.periodType === 'quarter' || dateState.periodType === 'year') return null;
             return (
                 <>
+                    <GPTSection
+                        startDate={dateState.startDate}
+                        endDate={dateState.endDate}
+                        currentDate={dateState.formattedDate}
+                    />
                     <TextLists
                         startDate={dateState.startDate}
                         endDate={dateState.endDate}

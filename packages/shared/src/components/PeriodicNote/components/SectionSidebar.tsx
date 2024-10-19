@@ -40,7 +40,6 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 			{ id: 'money', title: 'Money', icon: 'ios-cash' },
 			{ id: 'time', title: 'Time', icon: 'ios-time' },
 			{ id: 'gpt', title: 'GPT Section', icon: 'ios-chatbubbles' },
-			{ id: 'text', title: 'Text', icon: 'ios-list' },
 		];
 	
 		if (dateState.periodType !== 'week') {
@@ -57,7 +56,7 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 		}));
 	}, [dateState.periodType]);
 
-	const itemHeight = 48; // height of each item, adjust as needed
+	const itemHeight = 50; // height of each item, adjust as needed
 	const totalHeight = sections.length * itemHeight;
 	
 	const path = `
@@ -157,7 +156,6 @@ const styles = StyleSheet.create({
 	button: {
 		width: 30,
 		height: 30,
-		// borderWidth: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
 		borderRadius: 25,

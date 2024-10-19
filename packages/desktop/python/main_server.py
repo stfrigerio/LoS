@@ -47,9 +47,8 @@ def process_data():
             "mood_data": mood_data,
         }
         
-
-        claude_response = generate_mood_recap(data_to_send)
-        mood_summary = claude_response.content[0].text
+        # claude_response = generate_mood_recap(data_to_send)
+        # mood_summary = claude_response.content[0].text
 
         data = {
             "id": None,
