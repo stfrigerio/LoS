@@ -23,7 +23,7 @@ client = anthropic.Anthropic(
 
 def generate_mood_recap(mood_data):    
     original_prompt = f"""
-Here is the summary of the habits and time data for the week:
+Here is the summary of the daily notes and mood data for the week:
 <data>
 {mood_data}
 </data>
@@ -43,6 +43,45 @@ Please begin your response with the <reflection> and end with the <questions_to_
     message = client.messages.create(
         model="claude-3-5-sonnet-20240620",
         max_tokens=1000,
+        temperature=0.5,
+        system=f"You are an assistant tasked with analyzing and reflecting on {PERSON_NAME}'s data. He likes {interests} so keep that in mind when reflecting.",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": mood_user_message
+                    }
+                ]
+            }
+        ]
+    )
+
+    return message
+
+def generate_monthly_mood_recap(mood_data):
+    original_prompt = f"""
+Here is the summary of the daily notes and mood data for the month, also included are the weekly summaries for the month:
+<data>
+{mood_data}
+</data>
+
+Please carefully analyze this data. Based on your analysis, write a thoughtful <reflection> with the following sections:
+
+- 'Nice' (A nice verbose summary of what went well in all areas)
+- 'Not so nice' (A nice verbose summary of what didn't go so well in all areas)
+
+After the reflection, please add a <questions_to_ponder> section with 4 insightful questions the person could ask themselves to further reflect on their habits progress and challenges, based solely on the provided data. Single questions and please smart questions that a behavioural psychologist would ask.
+    
+Please begin your response with the <reflection> and end with the <questions_to_ponder>. Always address the user directly in second person.
+"""
+
+    mood_user_message = original_prompt
+
+    message = client.messages.create(
+        model="claude-3-5-sonnet-20240620",
+        max_tokens=2000,
         temperature=0.5,
         system=f"You are an assistant tasked with analyzing and reflecting on {PERSON_NAME}'s data. He likes {interests} so keep that in mind when reflecting.",
         messages=[

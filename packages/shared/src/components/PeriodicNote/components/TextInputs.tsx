@@ -260,7 +260,7 @@ const getStyles = (theme: any) => {
             paddingHorizontal: 20,
             marginTop: 15,
             borderRadius: 5,
-            alignSelf: 'flex-start',
+            alignSelf: 'center',
         },
         addButtonText: {
             color: 'gray',
@@ -275,32 +275,34 @@ const getStyles = (theme: any) => {
             marginBottom: isDesktop ? 0 : 20,
         },
         inputContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: 15,
+            flexDirection: 'column',
+            marginBottom: 10
         },
         inputWrapper: {
-            flex: 1,
+            width: '100%',
         },
         editingInput: {
-            backgroundColor: theme.backgroundColor,
             minHeight: 50,
             borderRadius: 5,
             padding: 10,
+            width: '100%',
         },
         readOnlyInput: {
             backgroundColor: 'transparent',
             minHeight: 50,
             borderRadius: 5,
             padding: 10,
-        },
-        icon: {
-            marginHorizontal: 10,
+            marginBottom: 0,
+            width: '100%',
         },
         iconContainer: {
             flexDirection: 'row',
+            justifyContent: 'flex-end',
             alignItems: 'center',
-            paddingRight: 10,
+            marginBottom: 5,
+        },
+        icon: {
+            marginHorizontal: 10,
         },
     });
 }

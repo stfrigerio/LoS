@@ -50,7 +50,7 @@ const TextLists: React.FC<TextListsProps> = ({ startDate, endDate }) => {
 	};
 
 	const renderWeekCard = useCallback(({ item }: { item: WeeklyData }) => (
-		<View style={styles.weekCard}>
+		<View style={[styles.weekCard, {marginTop: 20}]}>
 			<View style={styles.gridContainer}>
 				{/* Week number card */}
 				<View style={[styles.dayCard, styles.weekNumberCard]}>
@@ -75,8 +75,6 @@ const TextLists: React.FC<TextListsProps> = ({ startDate, endDate }) => {
 		</View>
 	), [styles.weekCard, styles.gridContainer, styles.dayCard, styles.dateText, styles.listItem, formatDateWithDay]);
 
-	// Modify groupByWeek function
-    // Modify groupByWeek function
     const groupByWeek = useCallback((data: DailyTextData[]): WeeklyData[] => {
         const weeks: WeeklyData[] = [];
         if (data.length === 0) return weeks;

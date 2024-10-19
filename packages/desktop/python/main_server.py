@@ -4,7 +4,7 @@ from datetime import datetime
 
 from data_processing.data_cleaning import clean_data
 from database.database_functions import fetch_pillars
-from ai_helpers.claude import generate_mood_recap, generate_journal_entry
+from ai_helpers.claude import generate_mood_recap, generate_journal_entry, generate_monthly_mood_recap
 from ai_helpers.gpt import create_thoughts
 from logger import logger
 
@@ -20,7 +20,7 @@ def get_week_number(date_str):
     return week_date
 
 @app.route('/weekly_summary', methods=['POST'])
-def process_data():
+def weekly_summary():
     try:
         # Load data from request instead of file
         data = request.json
@@ -73,6 +73,60 @@ def process_data():
         return jsonify({"message": "Data processed successfully", "mood_summary": data}), 200
     except Exception as e:
         logger.error(f"Error in process_data: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/monthly_summary', methods=['POST'])
+def monthly_summary():
+    try:
+        data = request.json
+        logger.info('Data recieved')
+
+        cleaned_data = clean_data(data)
+        logger.info('Data cleaned')
+
+        # Unpack cleaned_data
+        boolean_habits = cleaned_data["booleanHabits"]
+        quantifiable_habits = cleaned_data["quantifiableHabits"]
+        note_data = cleaned_data["dailyNoteData"]
+        time_data = cleaned_data["timeData"]
+        mood_data = cleaned_data["moodData"]
+        journal_data = cleaned_data["journalData"]
+
+        del cleaned_data["booleanHabits"]
+        del cleaned_data["quantifiableHabits"]
+
+        weekly_AI_summaries = data["weeklyAISummaries"]
+
+        data_to_send = {
+            "weekly_AI_summaries": weekly_AI_summaries,
+            "note_data": note_data,
+            "mood_data": mood_data,
+        }
+
+        claude_response = generate_monthly_mood_recap(data_to_send)
+        mood_summary = claude_response.content[0].text
+
+        pillars = fetch_pillars()
+
+        data_to_give_gpt = {
+            "successes": [note["success"] for note in note_data],
+            "beBetters": [note["beBetter"] for note in note_data],
+            "claude_summary": mood_summary
+        }
+
+        gpt_response = create_thoughts(data_to_give_gpt, pillars)
+
+        data = {
+            "id": None,
+            "date": data["currentDate"],
+            "type": "Mood Summary",
+            "claude_summary": mood_summary,
+            "gpt_summary": gpt_response
+        }
+
+        return jsonify({"message": "Data processed successfully", "mood_summary": data}), 200
+    except Exception as e:
+        logger.error(f"Error in monthly_summary: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/generate_journal', methods=['POST'])

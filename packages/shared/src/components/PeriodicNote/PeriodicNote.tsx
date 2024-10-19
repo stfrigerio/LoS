@@ -66,7 +66,7 @@ const PeriodicNote: React.FC<PeriodicNoteProps> = ({ route, startDate: propStart
 		<>
 			<View style={styles.mainContainer}>
 				<View style={[styles.contentContainer, Platform.OS === 'web' && { marginLeft: 200 }]}>
-					<ScrollView style={styles.container}>
+					<ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 						<ColorfulTimeline title={dateState.formattedDate} />
 
 						<View style={styles.periodNote}>

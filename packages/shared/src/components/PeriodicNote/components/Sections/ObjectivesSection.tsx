@@ -98,7 +98,6 @@ export const ObjectivesSection: React.FC<ObjectivesSectionProps> = ({ currentDat
                 {objectives.map((objective: ExtendedObjectiveData) => (
                     <Pressable
                         key={objective.uuid}
-                        style={styles.objectiveItem}
                         onPress={() => handleEditObjective(objective)}
                     >
                         <View key={objective.uuid} style={styles.objectiveItem}>
@@ -165,7 +164,10 @@ export const ObjectivesSection: React.FC<ObjectivesSectionProps> = ({ currentDat
 
 const getStyles = (themeColors: any) => StyleSheet.create({
     container: {
-        padding: 16,
+        paddingLeft: 10,
+        paddingRight: 20,
+        paddingTop: 20,
+        marginRight: 15
     },
     title: {
         fontSize: 18,
@@ -188,19 +190,17 @@ const getStyles = (themeColors: any) => StyleSheet.create({
     },
     objectiveText: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 12,
         color: themeColors.textColor,
     },
     completedObjectiveText: {
-        // textDecorationLine: 'line-through',
         color: themeColors.greenOpacity,
     },
     completionToggle: {
         width: '10%',
         alignItems: 'center',
-        // borderWidth: 1,
-        // borderColor: 'gray',
-        marginRight: '20%',
+        marginRight: '8%',
+        marginLeft: '2%',
         padding: 5,
         zIndex: 100,
     },
@@ -209,8 +209,6 @@ const getStyles = (themeColors: any) => StyleSheet.create({
         marginLeft: 8,
     },
     actions: {
-        // borderWidth: 1,
-        // borderColor: 'green',
         flexDirection: 'row',
         justifyContent: 'space-between',
         gap: 15

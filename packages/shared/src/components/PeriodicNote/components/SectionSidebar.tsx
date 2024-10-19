@@ -72,13 +72,21 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 	`;
 
 	const animatedWidth = React.useRef(new Animated.Value(0)).current;
+	const animatedOpacity = React.useRef(new Animated.Value(0)).current;
 
 	React.useEffect(() => {
-		Animated.timing(animatedWidth, {
-			toValue: visibility === 'hidden' ? 0 : sidebarWidth,
-			duration: 300,
-			useNativeDriver: false,
-		}).start();
+		Animated.parallel([
+			Animated.timing(animatedWidth, {
+				toValue: visibility === 'hidden' ? 0 : sidebarWidth,
+				duration: 300,
+				useNativeDriver: false,
+			}),
+			Animated.timing(animatedOpacity, {
+				toValue: visibility === 'hidden' ? 0 : 1,
+				duration: 300,
+				useNativeDriver: true,
+			})
+		]).start();
 	}, [visibility, sidebarWidth]);
 	
 	if (visibility === 'hidden') {
@@ -98,7 +106,7 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 			<Svg height={totalHeight} width={sidebarWidth} style={styles.sidebarShape}>
 				<Path d={path} fill={translucentBackgroundColor} />
 			</Svg>
-			<View style={styles.sidebarContent}>
+			<Animated.View style={[styles.sidebarContent, { opacity: animatedOpacity }]}>
 				{sections.map((section) => (
 					<Pressable
 						key={section.id}
@@ -127,7 +135,7 @@ const SectionSidebar: React.FC<SectionSidebarProps> = ({
 						)}
 					</Pressable>
 				))}
-			</View>
+			</Animated.View>
 		</Animated.View>
 	);
 };
