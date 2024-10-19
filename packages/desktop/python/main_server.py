@@ -3,7 +3,9 @@ import json
 from datetime import datetime
 
 from data_processing.data_cleaning import clean_data
+from database.database_functions import fetch_pillars
 from ai_helpers.claude import generate_mood_recap, generate_journal_entry
+from ai_helpers.gpt import create_thoughts
 from logger import logger
 
 app = Flask(__name__)
@@ -47,14 +49,25 @@ def process_data():
             "mood_data": mood_data,
         }
         
-        # claude_response = generate_mood_recap(data_to_send)
-        # mood_summary = claude_response.content[0].text
+        claude_response = generate_mood_recap(data_to_send)
+        mood_summary = claude_response.content[0].text
+
+        data_to_give_gpt = {
+            "successes": [note["success"] for note in note_data],
+            "beBetters": [note["beBetter"] for note in note_data],
+            "claude_summary": mood_summary
+        }
+
+        pillars = fetch_pillars()
+
+        gpt_response = create_thoughts(data_to_give_gpt, pillars)
 
         data = {
             "id": None,
             "date": week_date,
             "type": "Mood Summary",
-            "summary": mood_summary
+            "claude_summary": mood_summary,
+            "gpt_summary": gpt_response
         }
 
         return jsonify({"message": "Data processed successfully", "mood_summary": data}), 200

@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { useWindowDimensions } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import { format, eachWeekOfInterval, isSameWeek, addDays } from 'date-fns';
+import { format } from 'date-fns';
+import { parseDate, isSamePeriod } from '@los/shared/src/utilities/timezoneBullshit';
 
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 import { DailyTextData } from '@los/shared/src/types/TextNotes';
@@ -75,32 +76,42 @@ const TextLists: React.FC<TextListsProps> = ({ startDate, endDate }) => {
 	), [styles.weekCard, styles.gridContainer, styles.dayCard, styles.dateText, styles.listItem, formatDateWithDay]);
 
 	// Modify groupByWeek function
-	const groupByWeek = useCallback((data: DailyTextData[]): WeeklyData[] => {
-		const weeks: WeeklyData[] = [];
-		if (data.length === 0) return weeks;
+    // Modify groupByWeek function
+    const groupByWeek = useCallback((data: DailyTextData[]): WeeklyData[] => {
+        const weeks: WeeklyData[] = [];
+        if (data.length === 0) return weeks;
 
-		const start = new Date(startDate);
-		const end = new Date(endDate);
+        const start = parseDate(startDate.toString());
+        const end = parseDate(endDate.toString());
 
-		// Get all week start dates in the range
-		const weekStarts = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 });
+        let currentWeekStart = start;
+        let currentWeekData: DailyTextData[] = [];
 
-		weekStarts.forEach((weekStart) => {
-			const weekDays: any[] = Array(7).fill(null).map((_, index) => {
-				const currentDate = addDays(weekStart, index);
-				const noteForDay = data.find(note => isSameWeek(new Date(note.date), weekStart, { weekStartsOn: 1 }) && 
-					format(new Date(note.date), 'EEEE') === format(currentDate, 'EEEE'));
-				return noteForDay || { date: format(currentDate, 'yyyy-MM-dd'), success: '', beBetter: '' };
-			});
+        data.forEach(note => {
+            const noteDate = parseDate(note.date);
+            if (!isSamePeriod(currentWeekStart, noteDate, 'week')) {
+                if (currentWeekData.length > 0) {
+                    weeks.push({
+                        weekStartDate: currentWeekStart,
+                        weekDays: currentWeekData,
+                    });
+                }
+                currentWeekStart = noteDate;
+                currentWeekData = [];
+            }
+            currentWeekData.push(note);
+        });
 
-			weeks.push({
-				weekStartDate: weekStart,
-				weekDays,
-			});
-		});
+        // Add the last week if it exists
+        if (currentWeekData.length > 0) {
+            weeks.push({
+                weekStartDate: currentWeekStart,
+                weekDays: currentWeekData,
+            });
+        }
 
-		return weeks;
-	}, [startDate, endDate]);
+        return weeks;
+    }, [startDate, endDate]);
 
 	// Modify viewMode and groupedData
 	const groupedData = useMemo(() => groupByWeek(dailyTextData), [groupByWeek, dailyTextData]);

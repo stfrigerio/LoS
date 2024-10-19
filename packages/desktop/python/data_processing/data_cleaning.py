@@ -26,11 +26,11 @@ def clean_data(data):
             "date": date,
             "morningComment": note["morningComment"],
             "energy": note["energy"],
-            "wakeHour": note["wakeHour"],
+            # "wakeHour": note["wakeHour"], #^ temporarely removed since the model was overfixating on this
             "success": note["success"],
             "beBetter": note["beBetter"],
             "dayRating": note["dayRating"],
-            "sleepTime": note["sleepTime"]
+            # "sleepTime": note["sleepTime"] #^ same
         })
 
     for time_entry in data["timeData"]:
@@ -58,7 +58,6 @@ def clean_data(data):
             "rating": mood_entry["rating"],
             "comment": mood_entry["comment"],
             "tag": mood_entry["tag"],
-            "description": mood_entry["description"]
         })
 
     for journal_entry in data["journalData"]:

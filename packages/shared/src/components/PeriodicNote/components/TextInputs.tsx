@@ -16,8 +16,8 @@ import { PersonData } from '@los/shared/src/types/People';
 import { ContactData } from '@los/shared/src/types/Contact';
 import { useNavbarDrawer } from '@los/shared/src/components/Contexts/NavbarContext';
 
-let useEnhancedTextInput
-let useTextSection
+let useEnhancedTextInput: any
+let useTextSection: any
 if (Platform.OS === 'web') {
     useEnhancedTextInput = require('@los/desktop/src/components/@/hooks/useEnhancedTextInput').useEnhancedTextInput;
     useTextSection = require('@los/desktop/src/components/PeriodicNote/hooks/useTextSection').useTextSection;

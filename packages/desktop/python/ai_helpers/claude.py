@@ -35,7 +35,7 @@ Please carefully analyze this data. Based on your analysis, write a thoughtful <
 
 After the reflection, please add a <questions_to_ponder> section with 4 insightful questions the person could ask themselves to further reflect on their habits progress and challenges, based solely on the provided data. Single questions and please smart questions that a behavioural psychologist would ask.
     
-Please begin your response with the <reflection> and end with the <questions_to_ponder>.
+Please begin your response with the <reflection> and end with the <questions_to_ponder>. Always address the user directly in second person.
 """
 
     mood_user_message = original_prompt
