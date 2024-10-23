@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, Animated } from 'react-native';
 import createTimePicker from '@los/shared/src/sharedComponents/DateTimePicker';
-import { Picker } from '@react-native-picker/picker';
 import { PickerInput } from '@los/shared/src/components/modals/components/FormComponents';
 
 import { useThemeStyles } from '../styles/useThemeStyles';
@@ -11,6 +10,7 @@ interface FilterAndSortProps {
     onSortChange: (sortOption: SortOption) => void;
     tags: string[];
     searchPlaceholder: string;
+    isActive: boolean;
 }
 
 export interface FilterOptions {
@@ -21,10 +21,11 @@ export interface FilterOptions {
 
 export type SortOption = 'recent' | 'oldest' | 'highestValue' | 'lowestValue';
 
-const FilterAndSort: React.FC<FilterAndSortProps> = ({ onFilterChange, onSortChange, tags, searchPlaceholder }) => {
+const FilterAndSort: React.FC<FilterAndSortProps> = ({ onFilterChange, onSortChange, tags, searchPlaceholder, isActive }) => {
     const { themeColors, designs } = useThemeStyles();
-    const styles = React.useMemo(() => getStyles(themeColors), [themeColors]);
+    const styles = React.useMemo(() => getStyles(themeColors, isActive), [themeColors, isActive]);
     const TimePicker = useCallback(createTimePicker, [])();
+    const slideAnim = useRef(new Animated.Value(0)).current;
 
     const [filters, setFilters] = useState<FilterOptions>({
         dateRange: { start: null, end: null },
@@ -76,58 +77,93 @@ const FilterAndSort: React.FC<FilterAndSortProps> = ({ onFilterChange, onSortCha
         { label: 'Lowest Value', value: 'lowestValue' },
     ];
 
+    useEffect(() => {
+        Animated.timing(slideAnim, {
+            toValue: isActive ? 1 : 0,
+            duration: 300,
+            useNativeDriver: false,
+        }).start();
+    }, [isActive, slideAnim]);
+
+    const containerStyle = {
+        ...styles.container,
+        transform: [
+            {
+                translateY: slideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [600, 0], // Adjust these values based on your needs
+                }),
+            },
+        ],
+    };
+
     return (
-        <View style={styles.container}>   
-            <Text style={styles.sectionTitle}>Date Range</Text>         
-            <View style={styles.dateContainer}>
-                <Pressable style={styles.dateButton}onPress={() => showDatePicker('start')}>
-                    <Text style={designs.text.text}>Start Date: {filters.dateRange.start ? filters.dateRange.start.toDateString() : 'Not set'}</Text>
-                </Pressable>
-                <Pressable style={styles.dateButton} onPress={() => showDatePicker('end')}>
-                    <Text style={designs.text.text}>End Date: {filters.dateRange.end ? filters.dateRange.end.toDateString() : 'Not set'}</Text>
-                </Pressable>
-            </View>
+        <>
+            <Animated.View style={containerStyle} pointerEvents={isActive ? 'auto' : 'none'}>
+                <View style={styles.content}>
 
-            <Text style={styles.sectionTitle}>Tags</Text>
-            <View style={styles.tagsContainer}>
-                {tags.map(tag => (
-                <Pressable
-                    key={tag}
-                    style={[styles.tagButton, filters.tags.includes(tag) && styles.tagButtonSelected]}
-                    onPress={() => handleTagChange(tag)}
-                >
-                    <Text style={filters.tags.includes(tag) ? styles.tagTextSelected : styles.tagText}>{tag}</Text>
-                </Pressable>
-                ))}
-            </View>
+                    <Text style={styles.sectionTitle}>Date Range</Text>         
+                    <View style={styles.dateContainer}>
+                        <Pressable style={styles.dateButton}onPress={() => showDatePicker('start')}>
+                            <Text style={designs.text.text}>Start Date: {filters.dateRange.start ? filters.dateRange.start.toDateString() : 'Not set'}</Text>
+                        </Pressable>
+                        <Pressable style={styles.dateButton} onPress={() => showDatePicker('end')}>
+                            <Text style={designs.text.text}>End Date: {filters.dateRange.end ? filters.dateRange.end.toDateString() : 'Not set'}</Text>
+                        </Pressable>
+                    </View>
 
-            <Text style={styles.sectionTitle}>Search</Text>
-            <TextInput
-                style={styles.searchInput}
-                placeholder={searchPlaceholder}
-                value={filters.searchTerm}
-                onChangeText={handleSearchChange}
-                placeholderTextColor={'gray'}
-            />
+                    <Text style={styles.sectionTitle}>Tags</Text>
+                    <View style={styles.tagsContainer}>
+                        {tags.map(tag => (
+                        <Pressable
+                            key={tag}
+                            style={[styles.tagButton, filters.tags.includes(tag) && styles.tagButtonSelected]}
+                            onPress={() => handleTagChange(tag)}
+                        >
+                            <Text style={filters.tags.includes(tag) ? styles.tagTextSelected : styles.tagText}>{tag}</Text>
+                        </Pressable>
+                        ))}
+                    </View>
 
-            <PickerInput
-                label="Sort by"
-                selectedValue={sortOption}
-                onValueChange={(itemValue) => handleSortChange(itemValue as SortOption)}
-                items={sortOptions}
-            />
+                    <Text style={styles.sectionTitle}>Search</Text>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder={searchPlaceholder}
+                        value={filters.searchTerm}
+                        onChangeText={handleSearchChange}
+                        placeholderTextColor={'gray'}
+                    />
 
-            {TimePicker.picker}
-        </View>
+                    <PickerInput
+                        label="Sort by"
+                        selectedValue={sortOption}
+                        onValueChange={(itemValue) => handleSortChange(itemValue as SortOption)}
+                        items={sortOptions}
+                    />
+
+                    {TimePicker.picker}
+
+                </View>
+            </Animated.View>
+        </>
     );
 };
 
-const getStyles = (themeColors: any) => StyleSheet.create({
+const getStyles = (themeColors: any, isActive: boolean) => StyleSheet.create({
     container: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        overflow: 'hidden',
+    },
+    content: {
         padding: 16,
-        marginBottom: 40
-        // borderWidth: 1,
-        // borderColor: themeColors.borderColor,
+        marginBottom: 90,
+        borderWidth: 1,
+        borderRadius: 16,
+        borderColor: themeColors.borderColor,
+        backgroundColor: themeColors.backgroundColor,
     },
     title: {
         fontSize: 18,
@@ -138,6 +174,7 @@ const getStyles = (themeColors: any) => StyleSheet.create({
     dateContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: 16,
     },
     dateButton: {

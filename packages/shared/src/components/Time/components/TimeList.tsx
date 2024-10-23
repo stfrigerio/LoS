@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, FlatList, Dimensions, Platform, Text } from 'react-native';
 
 import TimeEntry from './TimeEntry';
-
 import FilterAndSort, { FilterOptions, SortOption } from '@los/shared/src/sharedComponents/FilterAndSort';
 
 import { useThemeStyles } from '../../../styles/useThemeStyles';
@@ -27,26 +26,66 @@ const TimeList: React.FC<TimeListProps> = ({
     error,
 }) => {
     const { themeColors, designs } = useThemeStyles();
-    const styles = React.useMemo(() => getStyles(themeColors, designs), [themeColors, designs]);
+    const styles = React.useMemo(() => getStyles(themeColors, designs, showFilter), [themeColors, designs, showFilter]);
     
-    const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
+    const [filters, setFilters] = useState<FilterOptions>({
+        dateRange: { start: null, end: null },
+        tags: [],
+        searchTerm: '',
+    });
 
+    const [sortOption, setSortOption] = useState<SortOption>('recent');
+
+    // Compute sorted entries
     const sortedEntries = useMemo(() => {
         return [...entries].sort((a: TimeData, b: TimeData) => 
             new Date(b.startTime!).getTime() - new Date(a.startTime!).getTime()
         );
     }, [entries]);
-    
-    const [filteredEntries, setFilteredEntries] = useState<TimeData[]>(sortedEntries);
-    const tags: string[] = useMemo(() => {
+
+    // Derive unique tags
+    const tags = useMemo(() => {
         return Array.from(new Set(entries.map((entry: TimeData) => entry.tag)));
     }, [entries]);
 
-    useEffect(() => {
-        setFilteredEntries(sortedEntries);
-    }, [sortedEntries]);
+    // Compute filtered and sorted entries
+    const filteredEntries = useMemo(() => {
+        // Apply Filters
+        let filtered = sortedEntries.filter((entry: TimeData) => {
+            const entryDate = new Date(entry.date!);
+            entryDate.setHours(0, 0, 0, 0);  // Reset time to start of day
 
-    const toggleExpand = (id: number) => {
+            const inDateRange = (!filters.dateRange.start || entryDate >= new Date(filters.dateRange.start.setHours(0, 0, 0, 0))) &&
+                                (!filters.dateRange.end || entryDate <= new Date(filters.dateRange.end.setHours(0, 0, 0, 0)));
+
+            const matchesTags = filters.tags.length === 0 || filters.tags.includes(entry.tag);
+            const matchesSearch = entry.description!.toLowerCase().includes(filters.searchTerm.toLowerCase());
+            return inDateRange && matchesTags && matchesSearch;
+        });
+
+        // Apply Sorting
+        filtered.sort((a: TimeData, b: TimeData) => {
+            switch (sortOption) {
+                case 'recent':
+                    return new Date(b.startTime!).getTime() - new Date(a.startTime!).getTime();
+                case 'oldest':
+                    return new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime();
+                case 'highestValue':
+                    // Assuming duration is a number; adjust if it's a string
+                    return Number(b.duration!) - Number(a.duration!);
+                case 'lowestValue':
+                    return Number(a.duration!) - Number(b.duration!);
+                default:
+                    return 0;
+            }
+        });
+
+        return filtered;
+    }, [sortedEntries, filters, sortOption]);
+
+    const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
+
+    const toggleExpand = useCallback((id: number) => {
         setExpandedEntries(prev => {
             const newSet = new Set(prev);
             if (newSet.has(id)) {
@@ -56,9 +95,9 @@ const TimeList: React.FC<TimeListProps> = ({
             }
             return newSet;
         });
-    };
+    }, []);
 
-    const renderTimeEntry = React.useCallback(({ item }: { item: TimeData }) => (
+    const renderTimeEntry = useCallback(({ item }: { item: TimeData }) => (
         <TimeEntry
             item={item}
             isExpanded={expandedEntries.has(item.id!)}
@@ -66,40 +105,14 @@ const TimeList: React.FC<TimeListProps> = ({
             onUpdateTimeEntry={editTimeEntry}
             deleteTimeEntry={deleteTimeEntry}
         />
-    ), [expandedEntries, toggleExpand]);
+    ), [expandedEntries, toggleExpand, editTimeEntry, deleteTimeEntry]);
 
-
-    const handleFilterChange = (filters: FilterOptions) => {
-        const filtered = entries.filter((entry: TimeData) => {
-            const entryDate = new Date(entry.date!);
-            entryDate.setHours(0, 0, 0, 0);  // Reset time to start of day
-    
-            const inDateRange = (!filters.dateRange.start || entryDate >= new Date(filters.dateRange.start.setHours(0, 0, 0, 0))) &&
-                                (!filters.dateRange.end || entryDate <= new Date(filters.dateRange.end.setHours(0, 0, 0, 0)));
-    
-            const matchesTags = filters.tags.length === 0 || filters.tags.includes(entry.tag);
-            const matchesSearch = entry.description!.toLowerCase().includes(filters.searchTerm.toLowerCase());
-            return inDateRange && matchesTags && matchesSearch;
-        });
-        setFilteredEntries(filtered);
+    const handleFilterChange = (newFilters: FilterOptions) => {
+        setFilters(newFilters);
     };
 
-    const handleSortChange = (sortOption: SortOption) => {
-        const sorted = [...filteredEntries].sort((a: TimeData, b: TimeData) => {
-            switch (sortOption) {
-                case 'recent':
-                    return new Date(b.startTime!).getTime() - new Date(a.startTime!).getTime();
-                case 'oldest':
-                    return new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime();
-                case 'highestValue':
-                    return b.duration!.localeCompare(a.duration!);
-                case 'lowestValue':
-                    return a.duration!.localeCompare(b.duration!);
-                default:
-                    return 0;
-            }
-        });
-        setFilteredEntries(sorted);
+    const handleSortChange = (newSortOption: SortOption) => {
+        setSortOption(newSortOption);
     };
 
     return (
@@ -124,71 +137,30 @@ const TimeList: React.FC<TimeListProps> = ({
                     />
                 )}
             </View>
-            {showFilter && (
-                <FilterAndSort
-                    onFilterChange={handleFilterChange}
-                    onSortChange={handleSortChange}
-                    tags={tags}
-                    searchPlaceholder="Search by description"
-                />
-            )}
+            <FilterAndSort
+                onFilterChange={handleFilterChange}
+                onSortChange={handleSortChange}
+                tags={tags}
+                searchPlaceholder="Search by description"
+                isActive={showFilter}
+            />
         </>
     );
 };
 
-const getStyles = (themeColors: any, designs: any) => {
+const getStyles = (themeColors: any, designs: any, showFilter: boolean) => {
     const { width } = Dimensions.get('window');
     const isSmall = width < 1920;
     const isDesktop = Platform.OS === 'web';
 
     return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: themeColors.backgroundColor,
-            padding: 20,
-            marginTop: isDesktop ? 0 : 37,
-        },
-        header: {
-            alignItems: 'center',
-            marginBottom: 10,
-            fontFamily: 'serif',
-        },
-        headerText: {
-            ...designs.text.title,
-            fontSize: 24,
-            fontFamily: 'serif',
-        },
-        viewToggle: {
-            flexDirection: 'row',
-            justifyContent: 'center',
-            marginBottom: 20,
-        },
-        chartIcon: {
-            marginLeft: 15,
-        },
         list: {
             flex: 1,
-        },
-        graphPlaceholder: {
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-        },
-        floatingButton: {
-            position: 'absolute',
-            bottom: 20,
-            right: 20,
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: themeColors.hoverColor,
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexDirection: 'row',
         },
         timeList: {
             flex: 1,
             marginTop: 30,
+            marginBottom: showFilter ? 80 : 0,
         },
     });
 };

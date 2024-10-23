@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Pressable, Dimensions, Platform, Animated } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';    
 import { faChevronLeft, faSliders } from '@fortawesome/free-solid-svg-icons';
@@ -24,6 +24,12 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({
     const { themeColors } = useThemeStyles();
     const styles = getStyles(themeColors);
     const { slideAnim } = useNavbarDrawer();
+    const [isFilterActive, setIsFilterActive] = useState(false);
+
+    const handleFilterPress = () => {
+        setIsFilterActive(!isFilterActive);
+        onFilterPress && onFilterPress();
+    };
 
     return (
         <>
@@ -40,8 +46,12 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({
                     </Pressable>
                 )}
                 {showFilter && (
-                    <Pressable style={styles.filterIconWrapper} onPress={onFilterPress}>
-                        <FontAwesomeIcon icon={faSliders} color={'gray'} size={24} />
+                    <Pressable style={styles.filterIconWrapper} onPress={handleFilterPress}>
+                        <FontAwesomeIcon 
+                            icon={faSliders} 
+                            color={isFilterActive ? themeColors.hoverColor : 'gray'} 
+                            size={24} 
+                        />
                     </Pressable>
                 )}
                 {quickButtonFunction && (

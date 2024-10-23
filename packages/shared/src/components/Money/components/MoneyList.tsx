@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, FlatList, Dimensions, Platform } from 'react-native';
 
 import TransactionEntry from './TransactionEntry';
@@ -22,34 +22,43 @@ const MoneyList: React.FC<MoneyListProps> = ({
     showFilter
 }) => {
     const { themeColors, designs } = useThemeStyles();
-    const styles = React.useMemo(() => getStyles(themeColors, designs), [themeColors, designs]);
+    const styles = React.useMemo(() => getStyles(themeColors, designs, showFilter), [themeColors, designs, showFilter]);
 
-    //filter transactions to exclude anything that is not income or expense
-    const validTransactions = transactions.filter(transaction => 
-        transaction.type === 'Income' || transaction.type === 'Expense'
-    );
+    // Maintain filter and sort states
+    const [filters, setFilters] = useState<FilterOptions>({
+        dateRange: { start: null, end: null },
+        tags: [],
+        searchTerm: '',
+    });
 
-    const [filteredTransactions, setFilteredTransactions] = useState(validTransactions);
-    const tags = Array.from(new Set(validTransactions.map(t => t.tag)));
+    const [sortOption, setSortOption] = useState<SortOption>('recent');
 
-    useEffect(() => {
-        setFilteredTransactions(transactions);
+    // Compute valid transactions
+    const validTransactions = useMemo(() => {
+        return transactions.filter(transaction => 
+            transaction.type === 'Income' || transaction.type === 'Expense'
+        );
     }, [transactions]);
 
-    const handleFilterChange = (filters: FilterOptions) => {
-        const filtered = validTransactions.filter(transaction => {
-            const inDateRange = (!filters.dateRange.start || new Date(transaction.date) >= filters.dateRange.start) &&
-                                (!filters.dateRange.end || new Date(transaction.date) <= filters.dateRange.end);
+    // Derive unique tags
+    const tags = useMemo(() => {
+        return Array.from(new Set(validTransactions.map(t => t.tag)));
+    }, [validTransactions]);
+
+    // Compute filtered and sorted transactions
+    const filteredTransactions = useMemo(() => {
+        // Apply Filters
+        let filtered = validTransactions.filter(transaction => {
+            const transactionDate = new Date(transaction.date);
+            const inDateRange = (!filters.dateRange.start || transactionDate >= filters.dateRange.start) &&
+                                (!filters.dateRange.end || transactionDate <= filters.dateRange.end);
             const matchesTags = filters.tags.length === 0 || filters.tags.includes(transaction.tag);
             const matchesSearch = transaction.description.toLowerCase().includes(filters.searchTerm.toLowerCase());
             return inDateRange && matchesTags && matchesSearch;
         });
-        setFilteredTransactions(filtered);
-    };
 
-    const handleSortChange = (sortOption: SortOption) => {
-        // Implement sorting logic here
-        const sorted = [...filteredTransactions].sort((a, b) => {
+        // Apply Sorting
+        filtered.sort((a, b) => {
             switch (sortOption) {
                 case 'recent':
                     return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -63,7 +72,16 @@ const MoneyList: React.FC<MoneyListProps> = ({
                     return 0;
             }
         });
-        setFilteredTransactions(sorted);
+
+        return filtered;
+    }, [validTransactions, filters, sortOption]);
+
+    const handleFilterChange = (newFilters: FilterOptions) => {
+        setFilters(newFilters);
+    };
+
+    const handleSortChange = (newSortOption: SortOption) => {
+        setSortOption(newSortOption);
     };
     
     const renderItem = ({ item }: { item: MoneyData }) => (
@@ -86,19 +104,18 @@ const MoneyList: React.FC<MoneyListProps> = ({
                 windowSize={5}
                 removeClippedSubviews={true}
             />
-            {showFilter && (
-                <FilterAndSort
-                    onFilterChange={handleFilterChange}
-                    onSortChange={handleSortChange}
-                    tags={tags}
-                    searchPlaceholder="Search by description"
-                />
-            )}
+            <FilterAndSort
+                onFilterChange={handleFilterChange}
+                onSortChange={handleSortChange}
+                tags={tags}
+                searchPlaceholder="Search by description"
+                isActive={showFilter}
+            />
         </View>
     );
 };
 
-const getStyles = (themeColors: any, designs: any) => {
+const getStyles = (themeColors: any, designs: any, showFilter: boolean) => {
     const { width } = Dimensions.get('window');
     const isSmall = width < 1920;
     const isDesktop = Platform.OS === 'web';
@@ -106,9 +123,11 @@ const getStyles = (themeColors: any, designs: any) => {
     return StyleSheet.create({
         container: {
             flex: 1,
+            position: 'relative',
         },
         list: {
             marginTop: 30,
+            marginBottom: showFilter ? 80 : 0,
             flex: 1,
         },
     });

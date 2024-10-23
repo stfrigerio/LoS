@@ -30,7 +30,6 @@ const TimeHub: React.FC = () => {
     const { openHomepage } = useHomepage();
 
     const { entries, isLoading, error, deleteTimeEntry, editTimeEntry, addTimeEntry } = useTimeData();
-    
 
     const handleAddNewTimer = (newEntry: TimeData) => {
         addTimeEntry(newEntry);

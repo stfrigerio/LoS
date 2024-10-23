@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
 
 import { capitalizedTableNames } from '@los/shared/src/utilities/tableNames';
 
@@ -21,6 +22,36 @@ class DatabaseManager {
         const { status } = await MediaLibrary.requestPermissionsAsync();
         if (status !== 'granted') {
             throw new Error('Permission not granted');
+        }
+    }
+
+    async hardResetDatabase(): Promise<void> {
+        try {
+            // Close the current database connection
+            if (this.db) {
+                this.db.closeAsync();
+                this.db = null;
+            }
+
+            // Delete the database file
+            const dbPath = `${FileSystem.documentDirectory}SQLite/LocalDB.db`;
+            await FileSystem.deleteAsync(dbPath, { idempotent: true });
+
+            console.log('Database file deleted successfully');
+
+            // Reinitialize the database
+            this.initializePromise = this.checkAndRequestPermissions()
+                .then(() => this.initializeDatabase())
+                .catch((error) => {
+                    console.log('Error reinitializing database: ', error);
+                    return Promise.reject(error);
+                });
+
+            await this.initializePromise;
+            console.log('Database reinitialized successfully');
+        } catch (error) {
+            console.error('Error during hard reset:', error);
+            throw error;
         }
     }
 

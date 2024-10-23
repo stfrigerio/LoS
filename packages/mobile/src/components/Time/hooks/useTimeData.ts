@@ -11,14 +11,16 @@ export const useTimeData = () => {
     const fetchTimeEntries = useCallback(async () => {
         try {
             setIsLoading(true);
-            const endDate = startOfDay(new Date());
-            const startDate = subDays(endDate, 14); // Fetch last 14 days
+            // const endDate = startOfDay(new Date());
+            // const startDate = subDays(endDate, 14); // Fetch last 14 days
 
-            // Generate an array of all dates in the range
-            const dateRange = eachDayOfInterval({ start: startDate, end: endDate })
-                .map(date => format(date, 'yyyy-MM-dd'));
+            // // Generate an array of all dates in the range
+            // const dateRange = eachDayOfInterval({ start: startDate, end: endDate })
+            //     .map(date => format(date, 'yyyy-MM-dd'));
 
-            const timeEntries = await timeTableManager.getTime({ dateRange });
+            // const timeEntries = await timeTableManager.getTime({ dateRange });
+
+            const timeEntries = await timeTableManager.list();
 
             setEntries(timeEntries);
             setError(null);
