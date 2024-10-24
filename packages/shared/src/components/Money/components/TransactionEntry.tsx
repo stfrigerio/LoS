@@ -9,27 +9,21 @@ import AlertModal from '@los/shared/src/components/modals/AlertModal';
 import { MoneyData } from '../../../types/Money';
 import { useThemeStyles } from '../../../styles/useThemeStyles';
 
-let useColors: any;
-if (Platform.OS === 'web') {
-    useColors = require('@los/desktop/src/components/useColors').useColors;
-} else {
-    useColors = require('@los/mobile/src/components/useColors').useColors;
-}
-
 interface TransactionEntryProps {
     transaction: MoneyData;
     deleteTransaction: (uuid: string) => void;
     refreshTransactions: () => void;
+    tagColor: string;
 }
 
 const TransactionEntry: React.FC<TransactionEntryProps> = ({
     transaction,
     deleteTransaction,
     refreshTransactions,
+    tagColor,
 }) => {
     const { themeColors, designs } = useThemeStyles();
     const styles = React.useMemo(() => getStyles(themeColors, designs), [themeColors, designs]);
-    const { colors: tagColors, loading, error } = useColors();
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertVisible, setIsDeleteAlertVisible] = useState(false);
@@ -52,7 +46,6 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
     };
 
     const { day, month } = formatDate(transaction.date);
-    const tagColor = tagColors[transaction.tag] || 'gray'; // Default to gray if color not found
     
     return (
         <>

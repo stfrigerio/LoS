@@ -8,6 +8,13 @@ import { useThemeStyles } from '../../../styles/useThemeStyles';
 
 import { MoneyData } from '../../../types/Money';
 
+let useColors: any;
+if (Platform.OS === 'web') {
+	useColors = require('@los/desktop/src/components/useColors').useColors;
+} else {
+	useColors = require('@los/mobile/src/components/useColors').useColors;
+}
+
 interface MoneyListProps {
     transactions: MoneyData[];
     deleteTransaction: (id: string) => void;
@@ -23,6 +30,10 @@ const MoneyList: React.FC<MoneyListProps> = ({
 }) => {
     const { themeColors, designs } = useThemeStyles();
     const styles = React.useMemo(() => getStyles(themeColors, designs, showFilter), [themeColors, designs, showFilter]);
+	const { colors: tagColors, loading: colorsLoading, error: colorsError } = useColors();
+
+    const [selectedTransactions, setSelectedTransactions] = useState<MoneyData[]>([]);
+    const [isBatchEditModalOpen, setIsBatchEditModalOpen] = useState(false);
 
     // Maintain filter and sort states
     const [filters, setFilters] = useState<FilterOptions>({
@@ -83,12 +94,36 @@ const MoneyList: React.FC<MoneyListProps> = ({
     const handleSortChange = (newSortOption: SortOption) => {
         setSortOption(newSortOption);
     };
-    
+
+    // Memoize the color mapping for all entries
+    const entryColors = useMemo(() => {
+        if (colorsLoading || !tagColors) {
+            return {};
+        }
+        return validTransactions.reduce((acc, entry) => {
+            acc[entry.id!] = tagColors[entry.tag!] || themeColors.textColor;
+            return acc;
+        }, {} as Record<number, string>);
+    }, [validTransactions, tagColors, colorsLoading, themeColors.textColor]);
+
+    const toggleTransactionSelection = (transaction: MoneyData) => {
+        setSelectedTransactions(prev => 
+            prev.some(t => t.id === transaction.id)
+                ? prev.filter(t => t.id !== transaction.id)
+                : [...prev, transaction]
+        );
+    };
+
+    const handleLongPress = (transaction: MoneyData) => {
+        toggleTransactionSelection(transaction);
+    };
+
     const renderItem = ({ item }: { item: MoneyData }) => (
         <TransactionEntry
             transaction={item}
             deleteTransaction={deleteTransaction}
             refreshTransactions={refreshTransactions}
+            tagColor={entryColors[item.id!] || themeColors.textColor}
         />
     );
 

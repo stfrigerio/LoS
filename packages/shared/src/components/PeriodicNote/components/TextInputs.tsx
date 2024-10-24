@@ -197,6 +197,11 @@ const TextInputs: React.FC<TextSectionProps> = ({ periodType, startDate, endDate
                                     onMentionAdded={handleMentionAdded}
                                     onFocus={() => setKeyboardVisible(true)}
                                     onBlur={() => setKeyboardVisible(false)}
+                                    onKeyPress={({ nativeEvent }) => {
+                                        if (isEditing && nativeEvent.key === 'Enter') {
+                                            handleSave(section, index);
+                                        }
+                                    }}
                                 />
                             </View>
                             <View style={styles.iconContainer}>
