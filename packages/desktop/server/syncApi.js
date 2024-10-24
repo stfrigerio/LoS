@@ -22,7 +22,8 @@ const capitalizedTableNames = [
 	'People',
 	'Contact',
 	'Pillars',
-	'Objectives'
+	'Objectives',
+	'Music'
 ]
 
 const filename = 'syncApi.js';

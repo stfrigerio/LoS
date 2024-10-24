@@ -16,6 +16,21 @@ export interface Album {
     genres: string[];
 }
 
+interface AudioFeatures {
+    danceability: number;
+    energy: number;
+    key: number;
+    loudness: number;
+    mode: number;
+    speechiness: number;
+    acousticness: number;
+    instrumentalness: number;
+    liveness: number;
+    valence: number;
+    tempo: number;  // BPM
+    time_signature: number;
+}
+
 export const useSpotifyFetcher = () => {
     const { getAccessToken } = useSpotifyAuth();
 
@@ -109,8 +124,75 @@ export const useSpotifyFetcher = () => {
         }
     };
 
+    const getTrackDetails = async (trackId: string) => {
+        try {
+            const token = await getAccessToken();
+            if (!token) {
+                console.log('No token available');
+                return null;
+            }
+
+            const trackRes = await apiGet(`tracks/${trackId}`, {}, token);
+            if (!trackRes) {
+                console.log("Track not found");
+                return null;
+            }
+
+            // Fetch audio features (includes BPM, key, etc.)
+            const audioFeatures = await apiGet(`audio-features/${trackId}`, {}, token);
+
+            // Map musical key numbers to actual keys
+            const keyMap: { [key: number]: string } = {
+                0: "C",
+                1: "C♯/D♭",
+                2: "D",
+                3: "D♯/E♭",
+                4: "E",
+                5: "F",
+                6: "F♯/G♭",
+                7: "G",
+                8: "G♯/A♭",
+                9: "A",
+                10: "A♯/B♭",
+                11: "B"
+            };
+
+            // Return comprehensive track data
+            return {
+                // Basic track info
+                id: trackRes.id,
+                name: trackRes.name,
+                duration_ms: trackRes.duration_ms,
+                popularity: trackRes.popularity,
+                previewUrl: trackRes.preview_url,
+                trackNumber: trackRes.track_number,
+                
+                // Audio features
+                audioFeatures: audioFeatures ? {
+                    tempo: Math.round(audioFeatures.tempo), // BPM
+                    key: keyMap[audioFeatures.key],
+                    mode: audioFeatures.mode === 1 ? "Major" : "Minor",
+                    timeSignature: `${audioFeatures.time_signature}/4`,
+                    danceability: Math.round(audioFeatures.danceability * 100),
+                    energy: Math.round(audioFeatures.energy * 100),
+                    speechiness: Math.round(audioFeatures.speechiness * 100),
+                    acousticness: Math.round(audioFeatures.acousticness * 100),
+                    instrumentalness: Math.round(audioFeatures.instrumentalness * 100),
+                    liveness: Math.round(audioFeatures.liveness * 100),
+                    valence: Math.round(audioFeatures.valence * 100), // Musical positiveness
+                } : null,
+            };
+        } catch (error) {
+            console.error("Error fetching track:", error);
+            return null;
+        }
+    };
+
     return {
         fetchAlbums,
-        getAlbumById
+        getAlbumById,
+        getTrackDetails,
+        apiGet,
+        getAccessToken
     };
 };

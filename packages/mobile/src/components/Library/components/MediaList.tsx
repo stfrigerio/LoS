@@ -19,7 +19,7 @@ interface MediaListProps {
         onToggleDownload?: (item: LibraryData) => Promise<void>;
         updateItem: (item: LibraryData) => Promise<void>;
     }>;
-    SearchModalComponent: React.ComponentType<{ isOpen: boolean; onClose: () => void; onSaveToLibrary: (item: LibraryData) => Promise<void> }>;
+    SearchModalComponent: React.ComponentType<{ isOpen: boolean; onClose: () => void; onSaveToLibrary: (item: LibraryData) => Promise<LibraryData> }>;
     modalVisible: boolean;
     setModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -101,11 +101,13 @@ const MediaList: React.FC<MediaListProps> = ({ mediaType, CardComponent, Detaile
                             scrollEnabled={false}
                         />
                         {hasMore && <Text style={styles.buttonText}>Loading more...</Text>}
-                        {modalVisible && <SearchModalComponent
-                            isOpen={modalVisible}
-                            onClose={() => setModalVisible(false)}
-                            onSaveToLibrary={onSaveToLibrary}
-                        />}
+                        {modalVisible && 
+                            <SearchModalComponent
+                                isOpen={modalVisible}
+                                onClose={() => setModalVisible(false)}
+                                onSaveToLibrary={onSaveToLibrary}
+                            />
+                        }
                     </ScrollView>
                 )}
             </View>

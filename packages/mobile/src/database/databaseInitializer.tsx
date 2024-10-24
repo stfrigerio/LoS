@@ -44,7 +44,8 @@ export const InitializeDatabasesWrapper = () => {
                         databaseManagers.people.initialize(),
                         databaseManagers.contact.initialize(),
                         databaseManagers.pillars.initialize(),
-                        databaseManagers.objectives.initialize()
+                        databaseManagers.objectives.initialize(),
+                        databaseManagers.music.initialize()
                     ]);
 
                     initializeAppSettings();
@@ -97,7 +98,8 @@ export const InitializeDatabasesWrapper = () => {
                     databaseManagers.contact.initialize(),
                     databaseManagers.pillars.initialize(),
                     databaseManagers.objectives.initialize(),
-                    databaseManagers.deletionLog.initialize()
+                    databaseManagers.deletionLog.initialize(),
+                    databaseManagers.music.initialize()
                 ]);
 
                 initializeAppSettings();

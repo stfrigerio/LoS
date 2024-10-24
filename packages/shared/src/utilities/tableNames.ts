@@ -14,7 +14,8 @@ export const apiTableNames = [
     'people',
     'contact',
     'pillars',
-    'objectives'
+    'objectives',
+    'music'
 ];
 
 //! Also initialise the table in databaseInitializer.tsx
@@ -34,7 +35,8 @@ export const capitalizedTableNames = [
     'People',
     'Contact',
     'Pillars',
-    'Objectives'
+    'Objectives',
+    'Music'
 ]
 
 export const tableMapping: { [key: string]: string } = {
@@ -52,5 +54,6 @@ export const tableMapping: { [key: string]: string } = {
     'People': 'people',
     'Contact': 'contact',
     'Pillars': 'pillars',
-    'Objectives': 'objectives'
+    'Objectives': 'objectives',
+    'Music': 'music'
 };

@@ -20,7 +20,8 @@ const apiTableNames = [
 	'people',
 	'contact',
 	'objectives',
-	'pillars'
+	'pillars',
+	'music'
 ];
 
 const router = express.Router();

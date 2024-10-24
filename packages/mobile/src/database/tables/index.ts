@@ -16,6 +16,7 @@ import { contactTableManager } from './contactTable';
 import { pillarsTableManager } from './pillarsTable';
 import { objectivesTableManager } from './objectivesTable';
 import { deletionLogTableManager } from './deletionTable';
+import { musicManager } from './musicTable';
 
 export type DatabaseManagers = {
   dailyNotes: typeof dailyNoteTableManager;
@@ -35,6 +36,7 @@ export type DatabaseManagers = {
   contact: typeof contactTableManager,
   pillars: typeof pillarsTableManager,
   objectives: typeof objectivesTableManager,
+  music: typeof musicManager,
   deletionLog: typeof deletionLogTableManager
 };
 
@@ -56,5 +58,6 @@ export const databaseManagers: DatabaseManagers = {
   contact: contactTableManager,
   pillars: pillarsTableManager,
   objectives: objectivesTableManager,
+  music: musicManager,
   deletionLog: deletionLogTableManager
 };

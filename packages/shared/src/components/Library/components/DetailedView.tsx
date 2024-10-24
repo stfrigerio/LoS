@@ -3,7 +3,9 @@ import { View, Text, Image, Pressable, StyleSheet, ScrollView, BackHandler, Swit
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faStar, faTrash } from '@fortawesome/free-solid-svg-icons';
 
-import { LibraryData } from '../../../types/Library';
+import TrackDetailModal from '../modals/TrackDetailModal';
+
+import { LibraryData, TrackData } from '../../../types/Library';
 import { useThemeStyles } from '../../../styles/useThemeStyles';
 import { databaseManagers } from '@los/mobile/src/database/tables';
 
@@ -21,6 +23,8 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
     const styles = getStyles(themeColors);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editedTitle, setEditedTitle] = useState(item.title);
+    const [selectedTrack, setSelectedTrack] = useState<TrackData | null>(null);
+    const [isTrackModalVisible, setIsTrackModalVisible] = useState(false);
 
     const handleDelete = async () => {
         onDelete(item);
@@ -144,19 +148,43 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
         </>
     );
 
+    const handleTrackPress = async (trackName: string) => {
+        try {
+            // Fetch track details from the database
+            const tracks = await databaseManagers.music.getMusicTracks({ 
+                libraryUuid: item.uuid,
+                trackName 
+            });
+            
+            if (tracks && tracks.length > 0) {
+                setSelectedTrack(tracks[0]);
+                setIsTrackModalVisible(true);
+            }
+        } catch (error) {
+            console.error('Error fetching track details:', error);
+        }
+    };
+
     const renderTrackList = (trackNames: string) => {
         const tracks = trackNames.split(' | ');
         return (
             <View>
                 {tracks.map((track, index) => (
-                    <View key={index} style={styles.trackItemContainer}>
+                    <Pressable 
+                        key={index} 
+                        style={styles.trackItemContainer}
+                        onPress={() => handleTrackPress(track)}
+                    >
                         <Text style={styles.trackNumber}>{index + 1}.</Text>
-                        <Text style={styles.trackName}>{track}</Text>
-                    </View>
+                        <Text style={[styles.trackName, styles.trackNameClickable]}>
+                            {track}
+                        </Text>
+                    </Pressable>
                 ))}
             </View>
         );
     };
+
 
     const renderSpecificDetails = () => {
         switch (item.type) {
@@ -200,34 +228,43 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Image source={{ uri: ensureHttpsUrl(item.mediaImage) }} style={styles.poster} />
-            <View style={styles.details}>
-                <Pressable onPress={handleTitleEdit}>
-                    {isEditingTitle ? (
-                        <TextInput
-                            style={[styles.title, styles.titleInput]}
-                            value={editedTitle}
-                            onChangeText={setEditedTitle}
-                            onBlur={handleTitleEdit}
-                            autoFocus
-                        />
-                    ) : (
-                        <Text style={styles.title}>{item.title}</Text>
-                    )}
-                </Pressable>
-                {renderRating(currentRating)}
-                <View style={styles.divider} />
-                {renderCommonDetails()}
-                <View style={styles.divider} />
-                {renderSpecificDetails()}
-                <Pressable onPress={handleDelete} style={styles.deleteButton}>
-                    <FontAwesomeIcon icon={faTrash} size={20} color={themeColors.redOpacity} />
-                    <Text style={styles.deleteButtonText}>{`Delete ${item.type}`}</Text>
-                </Pressable>
-            </View>
-            <View style={{ height: 100 }} />
-        </ScrollView>
+        <>
+            <ScrollView style={styles.container}>
+                <Image source={{ uri: ensureHttpsUrl(item.mediaImage) }} style={styles.poster} />
+                <View style={styles.details}>
+                    <Pressable onPress={handleTitleEdit}>
+                        {isEditingTitle ? (
+                            <TextInput
+                                style={[styles.title, styles.titleInput]}
+                                value={editedTitle}
+                                onChangeText={setEditedTitle}
+                                onBlur={handleTitleEdit}
+                                autoFocus
+                            />
+                        ) : (
+                            <Text style={styles.title}>{item.title}</Text>
+                        )}
+                    </Pressable>
+                    {renderRating(currentRating)}
+                    <View style={styles.divider} />
+                    {renderCommonDetails()}
+                    <View style={styles.divider} />
+                    {renderSpecificDetails()}
+                    <Pressable onPress={handleDelete} style={styles.deleteButton}>
+                        <FontAwesomeIcon icon={faTrash} size={20} color={themeColors.redOpacity} />
+                        <Text style={styles.deleteButtonText}>{`Delete ${item.type}`}</Text>
+                    </Pressable>
+                </View>
+                <View style={{ height: 100 }} />
+            </ScrollView>
+            {selectedTrack && (
+                <TrackDetailModal
+                    isVisible={isTrackModalVisible}
+                    onClose={() => setIsTrackModalVisible(false)}
+                    track={selectedTrack}
+                />
+            )}
+        </>
     );
 };
 
@@ -329,6 +366,9 @@ const getStyles = (theme: any) => StyleSheet.create({
         fontSize: 16,
         color: theme.textColor,
         flex: 1,
+    },
+    trackNameClickable: {
+        textDecorationLine: 'underline',
     },
 });
 

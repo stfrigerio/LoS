@@ -4,12 +4,13 @@ import { View, Text, Modal, TextInput, Pressable, FlatList, StyleSheet, Image, A
 import { useSpotifyFetcher, Album } from '../api/musicFetcher';
 import { useThemeStyles } from '../../../styles/useThemeStyles';
 
-import { LibraryData } from '../../../types/Library';
+import { LibraryData, TrackData } from '../../../types/Library';
+import { databaseManagers } from '@los/mobile/src/database/tables';
 
 interface MusicSearchModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSaveToLibrary: (album: LibraryData) => void;
+    onSaveToLibrary: (album: LibraryData) => Promise<LibraryData>; // Now expects return value
 }
 
 const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onClose, onSaveToLibrary }) => {
@@ -20,11 +21,14 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onClose, on
     const [showAlbumsList, setShowAlbumsList] = useState(false);
     const [showRatingInput, setShowRatingInput] = useState(false);
     const [detailedAlbum, setDetailedAlbum] = useState<LibraryData | null>(null);
+    const [loadingTrack, setLoadingTrack] = useState<string | null>(null);
+    const [progress, setProgress] = useState({ current: 0, total: 0 });
+    const [tracks, setTracks] = useState<TrackData[]>([]);
 
     const { themeColors, designs } = useThemeStyles();
     const styles = getStyles(themeColors);
 
-    const { fetchAlbums, getAlbumById } = useSpotifyFetcher();
+    const { fetchAlbums, getAlbumById, getTrackDetails, apiGet, getAccessToken } = useSpotifyFetcher();
 
     const handleSearch = async () => {
         try {
@@ -45,9 +49,103 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onClose, on
     const handleSelectAlbum = async (album: Album) => {
         const detailedData = await getAlbumById(album.id);
         if (detailedData) {
+            if (detailedData.cast) {
+                const tracks = detailedData.cast.split(' | ');
+                
+                const token = await getAccessToken();
+                if (!token) {
+                    console.error('No access token available');
+                    return;
+                }
+    
+                const albumRes = await apiGet(`albums/${album.id}`, {}, token);
+                
+                if (albumRes && albumRes.tracks && albumRes.tracks.items) {
+                    setProgress({ current: 0, total: albumRes.tracks.items.length });
+                    const tracksToSave: TrackData[] = [];
+    
+                    for (let i = 0; i < albumRes.tracks.items.length; i++) {
+                        const track = albumRes.tracks.items[i];
+                        setLoadingTrack(track.name);
+                        setProgress(prev => ({ ...prev, current: i + 1 }));
+                        
+                        const trackDetails = await getTrackDetails(track.id);
+                        if (trackDetails && trackDetails.audioFeatures) {
+                            const trackData: TrackData = {
+                                uuid: track.id,
+                                libraryUuid: '', // Will be set after album save
+                                trackName: track.name,
+                                trackNumber: track.track_number,
+                                durationMs: track.duration_ms,
+                                popularity: trackDetails.popularity,
+                                previewUrl: trackDetails.previewUrl,
+                                // Audio Features
+                                tempo: trackDetails.audioFeatures.tempo,
+                                key: trackDetails.audioFeatures.key,
+                                mode: Number(trackDetails.audioFeatures.mode) === 1 ? "Major" : "Minor", 
+                                timeSignature: `${trackDetails.audioFeatures.timeSignature}`,
+                                danceability: Math.round(trackDetails.audioFeatures.danceability),
+                                energy: Math.round(trackDetails.audioFeatures.energy),
+                                speechiness: Math.round(trackDetails.audioFeatures.speechiness),
+                                acousticness: Math.round(trackDetails.audioFeatures.acousticness),
+                                instrumentalness: Math.round(trackDetails.audioFeatures.instrumentalness),
+                                liveness: Math.round(trackDetails.audioFeatures.liveness),
+                                valence: Math.round(trackDetails.audioFeatures.valence),
+                                playCount: 0,
+                                rating: 0,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            };
+                            tracksToSave.push(trackData);
+                        }
+                    }
+                    setTracks(tracksToSave);
+                    setLoadingTrack(null);
+                }
+            }
+    
             setDetailedAlbum(detailedData);
             setShowAlbumsList(false);
             setShowRatingInput(true);
+        }
+    };
+
+    const handleSave = async () => {
+        if (detailedAlbum) {
+            const libraryData: LibraryData = {
+                ...detailedAlbum,
+                rating: parseFloat(personalRating),
+                comments: '',
+            };
+    
+            // Save the album first to get its UUID
+            const savedAlbum = await onSaveToLibrary(libraryData);
+    
+            // Now save all tracks with the album's UUID
+            for (const track of tracks) {
+                const trackWithAlbumUuid: TrackData = {
+                    ...track,
+                    libraryUuid: savedAlbum.uuid!,
+                };
+                
+                try {
+                    await databaseManagers.music.upsert(trackWithAlbumUuid);
+                } catch (error) {
+                    console.error(`Error saving track ${track.trackName}:`, error);
+                }
+            }
+
+            // Reset everything
+            setQuery('');
+            setAlbums([]);
+            setPersonalRating('');
+            setShowSearch(true);
+            setShowAlbumsList(false);
+            setShowRatingInput(false);
+            setDetailedAlbum(null);
+            setTracks([]);
+    
+            onClose();
         }
     };
 
@@ -78,27 +176,20 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onClose, on
         onClose(); // Close modal after saving
     };
 
-    const handleSave = () => {
-        if (detailedAlbum) {
-            const libraryData: LibraryData = {
-                ...detailedAlbum,
-                rating: parseFloat(personalRating),
-                comments: '', // You might want to add a field for comments in your modal
-            };
-
-            onSaveToLibrary(libraryData);
-
-            // reset everything
-            setQuery('');
-            setAlbums([]);
-            setPersonalRating('');
-            setShowSearch(true);
-            setShowAlbumsList(false);
-            setShowRatingInput(false);
-            setDetailedAlbum(null);
-
-            onClose();
-        }
+    // Add this loading indicator component
+    const renderLoadingIndicator = () => {
+        if (!loadingTrack) return null;
+        
+        return (
+            <View style={styles.loadingContainer}>
+                <Text style={[designs.text.text, styles.loadingText]}>
+                    Fetching track {progress.current} of {progress.total}
+                </Text>
+                <Text style={[designs.text.text, styles.loadingTrackName]}>
+                    "{loadingTrack}"
+                </Text>
+            </View>
+        );
     };
 
     return (
@@ -117,15 +208,15 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onClose, on
                                 placeholderTextColor={'gray'}
                                 onSubmitEditing={handleSearch}
                             />
-                            <Pressable style={designs.button.marzoPrimary} onPress={handleSearch}>
+                            <Pressable style={[designs.button.marzoPrimary, {width: '100%'}]} onPress={handleSearch}>
                                 <Text style={designs.button.buttonText}>Search</Text>
                             </Pressable>
-                            <Pressable style={designs.button.marzoSecondary} onPress={handleSaveCustomAlbumFromQuery}>
+                            <Pressable style={[designs.button.marzoSecondary, {width: '100%'}]} onPress={handleSaveCustomAlbumFromQuery}>
                                 <Text style={designs.button.buttonText}>Add Custom Album</Text>
                             </Pressable>
                         </>
                     )}
-                    {showAlbumsList && (
+                    {showAlbumsList && !loadingTrack && (
                         <FlatList
                             data={albums}
                             keyExtractor={(item) => item.id}
@@ -143,7 +234,8 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onClose, on
                             )}
                         />
                     )}
-                    {showRatingInput && detailedAlbum && (
+                    {loadingTrack && renderLoadingIndicator()}
+                    {showRatingInput && detailedAlbum && !loadingTrack && (
                         <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                             <Text style={designs.text.title}>Rate this album</Text>
                             <TextInput
@@ -155,7 +247,7 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onClose, on
                                 keyboardType="numeric"
                                 onSubmitEditing={handleSave}
                             />
-                            <Pressable style={designs.button.marzoSecondary} onPress={handleSave}>
+                            <Pressable style={[designs.button.marzoSecondary, {width: '100%'}]} onPress={handleSave}>
                                 <Text style={designs.button.buttonText}>Save to Library</Text>
                             </Pressable>
                         </View>
@@ -182,5 +274,19 @@ const getStyles = (theme: any) => StyleSheet.create({
         width: 50,
         height: 50,
         marginRight: 10,
-    }
+    },
+    loadingContainer: {
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadingText: {
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    loadingTrackName: {
+        fontStyle: 'italic',
+        textAlign: 'center',
+        color: theme.textColorFaded || 'gray',
+    },
 });

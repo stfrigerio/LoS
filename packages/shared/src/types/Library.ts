@@ -83,4 +83,32 @@ export interface SeriesItem extends BasicMediaItem {
     type: 'series';
 }
 
+export interface TrackData {
+    id?: number;
+    uuid: string;
+    libraryUuid: string;
+    trackName: string;
+    trackNumber: number;
+    durationMs: number;
+    popularity?: number;
+    previewUrl?: string;
+    // Audio Features
+    tempo: number;        // BPM
+    key: string;         // Musical key (C, C#, etc.)
+    mode: string;        // "Major" or "Minor"
+    timeSignature: string; // e.g., "4/4"
+    // Audio characteristics (0-100)
+    danceability: number;
+    energy: number;
+    speechiness: number;
+    acousticness: number;
+    instrumentalness: number;
+    liveness: number;
+    valence: number;
+    playCount: number;
+    rating: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export type SortOptionType = 'rating' | 'year' | 'seen';

@@ -48,14 +48,15 @@ export const useMediaList = (mediaType: 'movie' | 'book' | 'series' | 'videogame
         setSortedItems(filteredAndSorted);
     }, [items, sortOption, searchQuery]);
 
-    const onSaveToLibrary = async (item: LibraryData) => {
+    const onSaveToLibrary = async (item: LibraryData): Promise<LibraryData> => {
         try {
-            // console.log('Saving to library:', JSON.stringify(item, null, 2));
-            await databaseManagers.library.upsert(item);
+            const savedItem = await databaseManagers.library.upsert(item);
             fetchItems();
+            return savedItem; // Return the saved item with UUID
         } catch (error) {
             console.error(`Error saving ${mediaType} to library:`, error);
             Alert.alert("Error", `Failed to save the ${mediaType} to your library. Please try again.`);
+            throw error; // Re-throw to handle in the modal
         }
     };
 
@@ -77,12 +78,44 @@ export const useMediaList = (mediaType: 'movie' | 'book' | 'series' | 'videogame
 
     const handleDelete = async (item: LibraryData) => {
         try {
-            await databaseManagers.library.remove(item.id);
-            Alert.alert("Success", `${mediaType} deleted successfully`);
+            if (!item.uuid) {
+                throw new Error('UUID is required for deletion');
+            }
+
+            if (mediaType === 'music') {
+                // First delete all associated tracks
+                const tracks = await databaseManagers.music.getTracksByLibraryUuid(item.uuid);
+                
+                // Use Promise.all to handle all deletions in parallel
+                await Promise.all(tracks.map(async track => {
+                    if (track.uuid) {
+                        try {
+                            await databaseManagers.music.removeByUuid(track.uuid);
+                        } catch (error) {
+                            // Log but continue if a track deletion fails
+                            console.warn(`Failed to delete track ${track.uuid}:`, error);
+                        }
+                    }
+                }));
+            }
+
+            // Then delete the library item
+            await databaseManagers.library.removeByUuid(item.uuid);
+            
+            if (mediaType === 'music') {
+                Alert.alert("Success", "Album and all associated tracks deleted successfully");
+            } else {
+                Alert.alert("Success", `${mediaType} deleted successfully`);
+            }
+            
             fetchItems();
         } catch (error) {
             console.error(`Error deleting ${mediaType}:`, error);
-            Alert.alert("Error", `Failed to delete the ${mediaType}`);
+            if (mediaType === 'music') {
+                Alert.alert("Error", "Failed to delete the album and its tracks");
+            } else {
+                Alert.alert("Error", `Failed to delete the ${mediaType}`);
+            }
         }
     };
 
