@@ -1,5 +1,6 @@
+// TransactionModal.tsx
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { format } from 'date-fns';
 
 import TagModal from './TagModal';

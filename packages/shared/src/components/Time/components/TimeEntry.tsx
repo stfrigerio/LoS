@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faCheckCircle, faCircle } from '@fortawesome/free-solid-svg-icons';
 
 import EditTimeEntryModal from '../modals/EditModal';
 
@@ -11,18 +11,22 @@ import { useThemeStyles } from '../../../styles/useThemeStyles';
 
 interface TimeEntryProps {
 	item: TimeData;
-	isExpanded: boolean;
-	toggleExpand: (id: number) => void;
 	onUpdateTimeEntry: (updatedEntry: TimeData) => void;
 	deleteTimeEntry: (id: number) => void;
 	tagColor: string;
+	isSelectionMode: boolean;
+	isSelected: boolean;
+	toggleSelect: (uuid: string) => void;
 }
 
-const TimeEntry: React.FC<TimeEntryProps> = ({
+const TimeEntry: React.FC<TimeEntryProps> = React.memo(({
 	item,
 	onUpdateTimeEntry,
 	deleteTimeEntry,
 	tagColor,
+	isSelectionMode,
+	isSelected,
+	toggleSelect,
 }) => {
 	const { themeColors, designs } = useThemeStyles();
 	const styles = React.useMemo(() => getStyles(themeColors, designs), [themeColors, designs]);
@@ -51,16 +55,35 @@ const TimeEntry: React.FC<TimeEntryProps> = ({
 		};
 	};
 
-	const handleEditPress = () => {
-		setIsEditModalOpen(true);
+	const handlePress = () => {
+		if (isSelectionMode) {
+			toggleSelect(item.uuid!);
+		} else {
+			setIsEditModalOpen(true);
+		}
 	};
 
 	const { day, month } = formatDate(item.date);
 
 	return (
 		<>
-			<View style={styles.container}>
-				<Pressable onPress={handleEditPress} style={styles.content}>
+            <Pressable
+                onPress={handlePress}
+                onLongPress={() => toggleSelect(item.uuid!)}
+                style={[
+                    styles.container,
+                    isSelected && styles.selectedContainer
+                ]}
+            >
+				{isSelectionMode && (
+                    <FontAwesomeIcon
+                        icon={isSelected ? faCheckCircle : faCircle}
+                        size={20}
+                        color={isSelected ? 'green' : 'gray'}
+                        style={styles.selectionIcon}
+                    />
+                )}
+				<View style={styles.content}>
 					<View style={styles.dateContainer}>
 						<Text style={styles.dateDay}>{day}</Text>
 						<Text style={styles.dateMonth}>{month}</Text>
@@ -70,11 +93,13 @@ const TimeEntry: React.FC<TimeEntryProps> = ({
 					</View>
 					<Text numberOfLines={1} ellipsizeMode='tail' style={styles.description}>{item.description}</Text>
 					<Text style={styles.duration}>{item.duration || 'No duration'}</Text>
-				</Pressable>
-				<Pressable onPress={handleDelete} style={styles.actionIcon}>
-					<FontAwesomeIcon icon={faTrash} size={20} color={'gray'}/>
-				</Pressable>
-			</View>
+				</View>
+                {!isSelectionMode && (
+                    <Pressable onPress={handleDelete} style={styles.actionIcon}>
+                        <FontAwesomeIcon icon={faTrash} size={20} color={'gray'} />
+                    </Pressable>
+                )}
+			</Pressable>
 			{isEditModalOpen && (
 				<EditTimeEntryModal
 					isVisible={isEditModalOpen}
@@ -85,7 +110,7 @@ const TimeEntry: React.FC<TimeEntryProps> = ({
 			)}
 		</>
 	);
-};
+});
 
 const getStyles = (themeColors: any, designs: any) => StyleSheet.create({
 	container: {
@@ -96,6 +121,12 @@ const getStyles = (themeColors: any, designs: any) => StyleSheet.create({
 		borderRadius: 8,
 		marginBottom: 10,
 		backgroundColor: themeColors.backgroundSecondary,
+	},
+	selectedContainer: {
+		backgroundColor: themeColors.backgroundColor, // Define a color for selected state
+	},
+	selectionIcon: {
+		marginRight: 10,
 	},
 	content: {
 		flex: 1,

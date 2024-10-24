@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { timeTableManager } from '../../../database/tables/timeTable';
 import { TimeData } from '@los/shared/src/types/Time';
-import { startOfDay, startOfMonth, subDays, format, eachDayOfInterval } from 'date-fns';
 
 export const useTimeData = () => {
     const [entries, setEntries] = useState<TimeData[]>([]);
@@ -11,14 +10,6 @@ export const useTimeData = () => {
     const fetchTimeEntries = useCallback(async () => {
         try {
             setIsLoading(true);
-            // const endDate = startOfDay(new Date());
-            // const startDate = subDays(endDate, 14); // Fetch last 14 days
-
-            // // Generate an array of all dates in the range
-            // const dateRange = eachDayOfInterval({ start: startDate, end: endDate })
-            //     .map(date => format(date, 'yyyy-MM-dd'));
-
-            // const timeEntries = await timeTableManager.getTime({ dateRange });
 
             const timeEntries = await timeTableManager.list();
 
@@ -60,6 +51,45 @@ export const useTimeData = () => {
         }
     }, []);
 
+    const batchUpdateTimeEntries = useCallback(
+        async (uuids: string[], updatedFields: Partial<TimeData>) => {
+            try {
+                setIsLoading(true);
+                
+                const updatePromises = uuids.map(async (uuid) => {
+                    const existingEntry = entries.find(e => e.uuid === uuid);
+                    if (existingEntry) {
+                        const updatedEntry = { ...existingEntry, ...updatedFields };
+                        return await timeTableManager.upsert(updatedEntry);
+                    }
+                    return null;
+                });
+
+                const updatedEntries = await Promise.all(updatePromises);
+                const validUpdatedEntries = updatedEntries.filter(e => e !== null) as TimeData[];
+
+                // Create a new array with updated entries
+                setEntries(prevEntries => {
+                    const entriesMap = new Map(prevEntries.map(e => [e.uuid, e]));
+                    validUpdatedEntries.forEach(updated => {
+                        entriesMap.set(updated.uuid, updated);
+                    });
+                    return Array.from(entriesMap.values());
+                });
+
+                // Force a refresh of the data
+                await fetchTimeEntries();
+            } catch (err) {
+                console.error('Batch update failed:', err);
+                setError('Failed to batch update time entries');
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [entries, fetchTimeEntries]
+    );
+
     const addTimeEntry = useCallback(async (newEntry: Omit<TimeData, 'id'>) => {
         try {
             const addedEntry = await timeTableManager.upsert(newEntry);
@@ -78,5 +108,6 @@ export const useTimeData = () => {
         deleteTimeEntry,
         editTimeEntry,
         addTimeEntry,
+        batchUpdateTimeEntries,
     };
 };

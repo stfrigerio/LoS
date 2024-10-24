@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, StyleSheet, FlatList, Dimensions, Platform } from 'react-native';
+// MoneyList.tsx
+import React, { useState, useMemo } from 'react';
+import { View, StyleSheet, FlatList, Dimensions, Platform, Text, Pressable } from 'react-native';
 
 import TransactionEntry from './TransactionEntry';
 import FilterAndSort, { FilterOptions, SortOption } from '@los/shared/src/sharedComponents/FilterAndSort';
+import BatchTransactionModal from '../modals/BatchTransactionModal'; // New modal for batch editing
 
+import { useTransactionData } from '@los/mobile/src/components/Money/hooks/useTransactionData';
 import { useThemeStyles } from '../../../styles/useThemeStyles';
 
 import { MoneyData } from '../../../types/Money';
@@ -29,11 +32,11 @@ const MoneyList: React.FC<MoneyListProps> = ({
     showFilter
 }) => {
     const { themeColors, designs } = useThemeStyles();
-    const styles = React.useMemo(() => getStyles(themeColors, designs, showFilter), [themeColors, designs, showFilter]);
-	const { colors: tagColors, loading: colorsLoading, error: colorsError } = useColors();
-
-    const [selectedTransactions, setSelectedTransactions] = useState<MoneyData[]>([]);
-    const [isBatchEditModalOpen, setIsBatchEditModalOpen] = useState(false);
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const styles = React.useMemo(() => getStyles(themeColors, designs, showFilter, isSelectionMode), [themeColors, designs, showFilter, isSelectionMode]);
+    const { colors: tagColors, loading: colorsLoading, error: colorsError } = useColors();
+    const [selectedUuids, setSelectedUuids] = useState<Set<string>>(new Set());
+    const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
 
     // Maintain filter and sort states
     const [filters, setFilters] = useState<FilterOptions>({
@@ -87,18 +90,10 @@ const MoneyList: React.FC<MoneyListProps> = ({
         return filtered;
     }, [validTransactions, filters, sortOption]);
 
-    const handleFilterChange = (newFilters: FilterOptions) => {
-        setFilters(newFilters);
-    };
-
-    const handleSortChange = (newSortOption: SortOption) => {
-        setSortOption(newSortOption);
-    };
-
     // Memoize the color mapping for all entries
     const entryColors = useMemo(() => {
         if (colorsLoading || !tagColors) {
-            return {};
+                return {};
         }
         return validTransactions.reduce((acc, entry) => {
             acc[entry.id!] = tagColors[entry.tag!] || themeColors.textColor;
@@ -106,16 +101,41 @@ const MoneyList: React.FC<MoneyListProps> = ({
         }, {} as Record<number, string>);
     }, [validTransactions, tagColors, colorsLoading, themeColors.textColor]);
 
-    const toggleTransactionSelection = (transaction: MoneyData) => {
-        setSelectedTransactions(prev => 
-            prev.some(t => t.id === transaction.id)
-                ? prev.filter(t => t.id !== transaction.id)
-                : [...prev, transaction]
-        );
+    const toggleSelect = (uuid: string) => {
+        const newSelectedUuids = new Set(selectedUuids);
+        if (newSelectedUuids.has(uuid)) {
+            newSelectedUuids.delete(uuid);
+        } else {
+            newSelectedUuids.add(uuid);
+        }
+        setSelectedUuids(newSelectedUuids);
+        if (newSelectedUuids.size > 0) {
+            setIsSelectionMode(true);
+        } else {
+            setIsSelectionMode(false);
+        }
     };
 
-    const handleLongPress = (transaction: MoneyData) => {
-        toggleTransactionSelection(transaction);
+    const clearSelection = () => {
+        setSelectedUuids(new Set());
+        setIsSelectionMode(false);
+    };
+
+    const handleBatchEdit = () => {
+        setIsBatchModalOpen(true);
+    };
+
+    const handleBatchModalClose = () => {
+        setIsBatchModalOpen(false);
+        clearSelection();
+        refreshTransactions();
+    };
+
+    const { batchUpdateTransactions } = useTransactionData();
+
+    const handleBatchUpdate = (updatedFields: Partial<MoneyData>) => {
+        batchUpdateTransactions(Array.from(selectedUuids), updatedFields);
+        handleBatchModalClose();
     };
 
     const renderItem = ({ item }: { item: MoneyData }) => (
@@ -124,33 +144,65 @@ const MoneyList: React.FC<MoneyListProps> = ({
             deleteTransaction={deleteTransaction}
             refreshTransactions={refreshTransactions}
             tagColor={entryColors[item.id!] || themeColors.textColor}
+            isSelectionMode={isSelectionMode}
+            isSelected={selectedUuids.has(item.uuid!)}
+            toggleSelect={toggleSelect}
         />
     );
 
+    const handleFilterChange = (newFilters: FilterOptions) => {
+        setFilters(newFilters);
+    };
+
+    const handleSortChange = (newSortOption: SortOption) => {
+        setSortOption(newSortOption);
+    };
+
     return (
         <View style={styles.container}>
+            {isSelectionMode && (
+                <View style={styles.selectionHeader}>
+                    <Text style={styles.selectionText}>{selectedUuids.size} Selected</Text>
+                    <Pressable onPress={handleBatchEdit} style={styles.batchButton}>
+                        <Text style={styles.batchButtonText}>Batch Edit</Text>
+                    </Pressable>
+                    <Pressable onPress={clearSelection} style={styles.cancelButton}>
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </Pressable>
+                </View>
+            )}
             <FlatList
                 data={filteredTransactions}
                 renderItem={renderItem}
-                keyExtractor={(item) => item.id!.toString()}
+                keyExtractor={(item) => item.uuid!}
                 style={styles.list}
                 initialNumToRender={10}
                 maxToRenderPerBatch={5}
                 windowSize={5}
                 removeClippedSubviews={true}
             />
-            <FilterAndSort
-                onFilterChange={handleFilterChange}
-                onSortChange={handleSortChange}
-                tags={tags}
-                searchPlaceholder="Search by description"
-                isActive={showFilter}
-            />
+            {!isSelectionMode && (
+                <FilterAndSort
+                    onFilterChange={handleFilterChange}
+                    onSortChange={handleSortChange}
+                    tags={tags}
+                    searchPlaceholder="Search by description"
+                    isActive={showFilter}
+                />
+            )}
+            {isBatchModalOpen && (
+                <BatchTransactionModal
+                    isOpen={isBatchModalOpen}
+                    closeBatchModal={handleBatchModalClose}
+                    selectedTransactions={Array.from(selectedUuids).map(uuid => filteredTransactions.find(t => t.uuid === uuid)!)}
+                    onBatchUpdate={handleBatchUpdate}
+                />
+            )}
         </View>
     );
 };
 
-const getStyles = (themeColors: any, designs: any, showFilter: boolean) => {
+const getStyles = (themeColors: any, designs: any, showFilter: boolean, isSelectionMode: boolean) => {
     const { width } = Dimensions.get('window');
     const isSmall = width < 1920;
     const isDesktop = Platform.OS === 'web';
@@ -161,9 +213,44 @@ const getStyles = (themeColors: any, designs: any, showFilter: boolean) => {
             position: 'relative',
         },
         list: {
-            marginTop: 30,
+            marginTop: isSelectionMode ? 80 : 30, // Adjust margin if selection header is visible
             marginBottom: showFilter ? 80 : 0,
             flex: 1,
+        },
+        selectionHeader: {
+            position: 'absolute',
+            top: 10,
+            left: 0,
+            right: 0,
+            height: 60,
+            backgroundColor: themeColors.backgroundSecondary,
+            borderBottomWidth: 1,
+            borderBottomColor: themeColors.borderColor,
+            borderRadius: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 15,
+            zIndex: 1,
+        },
+        selectionText: {
+            color: 'gray',
+        },
+        batchButton: {
+            padding: 10,
+            borderRadius: 5,
+            marginRight: 10,
+        },
+        batchButtonText: {
+            color: themeColors.textColor,
+            fontWeight: 'bold',
+        },
+        cancelButton: {
+            padding: 10,
+            borderRadius: 5,
+        },
+        cancelButtonText: {
+            color: 'gray',
         },
     });
 };

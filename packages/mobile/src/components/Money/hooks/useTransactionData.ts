@@ -51,6 +51,43 @@ export const useTransactionData = () => {
         }
     }, []);
 
+    const batchUpdateTransactions = useCallback(
+        async (uuids: string[], updatedFields: Partial<MoneyData>) => {
+            try {
+                setIsLoading(true);
+                // Perform all upserts in parallel
+                const updatePromises = uuids.map(async (uuid) => {
+                    const existingTransaction = transactions.find(t => t.uuid === uuid);
+                    if (existingTransaction) {
+                        const updatedTransaction = { ...existingTransaction, ...updatedFields };
+                        return await databaseManagers.money.upsert(updatedTransaction);
+                    }
+                    return null;
+                });
+
+                const updatedTransactions = await Promise.all(updatePromises);
+
+                // Filter out any nulls (in case some uuids didn't match)
+                const validUpdatedTransactions = updatedTransactions.filter(t => t !== null) as MoneyData[];
+
+                // Update local state by replacing updated transactions
+                setTransactions(prevTransactions =>
+                    prevTransactions.map(t => {
+                        const updated = validUpdatedTransactions.find(u => u.uuid === t.uuid);
+                        return updated ? updated : t;
+                    })
+                );
+            } catch (err) {
+                setError('Failed to batch update transactions');
+                console.error('Error batch updating transactions:', err);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [transactions]
+    );
+
     const deleteTransaction = useCallback(async (uuid: string) => {
         try {
             await databaseManagers.money.removeByUuid(uuid);
@@ -73,6 +110,7 @@ export const useTransactionData = () => {
         addTransaction,
         updateTransaction,
         deleteTransaction,
-        refreshTransactions
+        refreshTransactions,
+        batchUpdateTransactions
     };
 };
