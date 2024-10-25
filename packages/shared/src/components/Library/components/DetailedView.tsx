@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ScrollView, BackHandler, Switch, TextInput } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faStar, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faTrash, faMusic, faPlay } from '@fortawesome/free-solid-svg-icons';
 
 import TrackDetailModal from '../modals/TrackDetailModal';
 
@@ -164,19 +164,29 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
             console.error('Error fetching track details:', error);
         }
     };
-
+    
     const renderTrackList = (trackNames: string) => {
         const tracks = trackNames.split(' | ');
         return (
-            <View>
+            <View style={styles.tracksContainer}>
                 {tracks.map((track, index) => (
                     <Pressable 
                         key={index} 
-                        style={styles.trackItemContainer}
+                        style={({ pressed }) => [
+                            styles.trackItemContainer,
+                            pressed && styles.trackItemPressed
+                        ]}
                         onPress={() => handleTrackPress(track)}
                     >
-                        <Text style={styles.trackNumber}>{index + 1}.</Text>
-                        <Text style={[styles.trackName, styles.trackNameClickable]}>
+                        <View style={styles.trackIconContainer}>
+                            <FontAwesomeIcon 
+                                icon={faMusic} 
+                                size={16} 
+                                color={themeColors.textColorItalic} 
+                            />
+                            <Text style={styles.trackNumber}>{(index + 1).toString().padStart(2, '0')}</Text>
+                        </View>
+                        <Text style={styles.trackName}>
                             {track}
                         </Text>
                     </Pressable>
@@ -255,7 +265,6 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
                         <Text style={styles.deleteButtonText}>{`Delete ${item.type}`}</Text>
                     </Pressable>
                 </View>
-                <View style={{ height: 100 }} />
             </ScrollView>
             {selectedTrack && (
                 <TrackDetailModal
@@ -269,14 +278,63 @@ const DetailedView: React.FC<DetailedViewProps> = ({ item, onClose, onDelete, on
 };
 
 const getStyles = (theme: any) => StyleSheet.create({
+    titleInput: {
+        borderBottomWidth: 1,
+        borderBottomColor: theme.borderColor,
+        paddingBottom: 5,
+    },
+    ratings: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+    },    tracksContainer: {
+        backgroundColor: theme.cardColor,
+        borderRadius: 12,
+        padding: 10,
+        marginTop: 10,
+    },
+    trackItemContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        marginBottom: 4,
+        backgroundColor: theme.backgroundColor,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: theme.borderColor,
+    },
+    trackItemPressed: {
+        backgroundColor: theme.hoverColor,
+        transform: [{ scale: 0.98 }],
+    },
+    trackIconContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: 60,
+    },
+    trackNumber: {
+        fontSize: 14,
+        color: theme.textColorItalic,
+        marginLeft: 8,
+        fontFamily: 'monospace',
+    },
+    trackName: {
+        fontSize: 16,
+        color: theme.textColor,
+        flex: 1,
+        marginLeft: 8,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: theme.textColorBold,
+        marginBottom: 5,
+        marginTop: 15,
+    },
+    // Update existing container styles
     container: {
         flex: 1,
         backgroundColor: theme.backgroundColor,
-    },
-    poster: {
-        width: '100%',
-        height: 400,
-        resizeMode: 'cover',
     },
     details: {
         flex: 1,
@@ -284,35 +342,44 @@ const getStyles = (theme: any) => StyleSheet.create({
         color: theme.textColor,
         fontSize: 14,
     },
+    poster: {
+        width: '100%',
+        height: 400,
+        resizeMode: 'cover',
+    },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: theme.textColorBold,
-        marginBottom: 10,
-    },
-    titleInput: {
-        borderBottomWidth: 1,
-        borderBottomColor: theme.borderColor,
-        paddingBottom: 5,
+        marginBottom: 15,
+        letterSpacing: 0.5,
     },
     ratingContainer: {
         flexDirection: 'row',
-        marginBottom: 15,
+        marginBottom: 20,
+        backgroundColor: theme.cardColor,
+        padding: 12,
+        borderRadius: 12,
+        justifyContent: 'center',
     },
     divider: {
-        height: 1,
+        height: 2,
         backgroundColor: theme.borderColor,
-        marginVertical: 15,
+        marginVertical: 20,
+        opacity: 0.5,
     },
     detailContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 12,
+        backgroundColor: theme.cardColor,
+        padding: 15,
+        borderRadius: 12,
     },
     detailLabel: {
         flex: 1,
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
         color: theme.textColorBold,
     },
     detailValue: {
@@ -321,54 +388,30 @@ const getStyles = (theme: any) => StyleSheet.create({
         color: theme.textColor,
         textAlign: 'right',
     },
-    ratings: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10,
-    },
     deleteButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 15,
-        borderRadius: 8,
-        marginTop: 20,
+        borderRadius: 12,
+        marginTop: 30,
+        borderWidth: 1,
+        borderColor: theme.redOpacity,
     },
     deleteButtonText: {
         color: theme.redOpacity,
         fontWeight: 'bold',
         marginLeft: 10,
+        fontSize: 16,
     },
     downloadToggleContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: theme.textColorBold,
-        marginBottom: 10,
-    },
-    trackItemContainer: {
-        flexDirection: 'row',
-        marginBottom: 5,
-        marginLeft: 40,
-    },
-    trackNumber: {
-        fontSize: 16,
-        color: 'gray',
-        marginRight: 5,
-        minWidth: 30,
-    },
-    trackName: {
-        fontSize: 16,
-        color: theme.textColor,
-        flex: 1,
-    },
-    trackNameClickable: {
-        textDecorationLine: 'underline',
+        marginTop: 20,
+        backgroundColor: theme.cardColor,
+        padding: 15,
+        borderRadius: 12,
     },
 });
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlay, faPause, faStepForward, faStepBackward, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faStepForward, faStepBackward, faTimes, faStar } from '@fortawesome/free-solid-svg-icons';
 import Slider from '@react-native-community/slider';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 import { useMusicPlayer } from '../contexts/MusicPlayerContext';
+
+import { databaseManagers } from '@los/mobile/src/database/tables';
 
 const MusicPlayerControls: React.FC = () => {
     const {
@@ -21,12 +23,66 @@ const MusicPlayerControls: React.FC = () => {
     } = useMusicPlayer();
 
     const [songName, setSongName] = useState<string>('');
+    const [currentRating, setCurrentRating] = useState<number>(0);
 
     useEffect(() => {
         if (currentSong) {
             setSongName(currentSong.split('.').slice(0, -1).join('.'));
+            fetchCurrentRating();
         }
     }, [currentSong]);
+
+    const fetchCurrentRating = async () => {
+        if (!currentSong) return;
+        try {
+            const tracks = await databaseManagers.music.getMusicTracks({ 
+                trackName: currentSong.split('.').slice(0, -1).join('.') 
+            });
+            if (tracks && tracks.length > 0) {
+                setCurrentRating(tracks[0].rating || 0);
+            }
+        } catch (error) {
+            console.error('Error fetching track rating:', error);
+        }
+    };
+    
+    const handleRatingChange = async (newRating: number) => {
+        if (!currentSong) return;
+        try {
+            const tracks = await databaseManagers.music.getMusicTracks({ 
+                trackName: currentSong.split('.').slice(0, -1).join('.') 
+            });
+            if (tracks && tracks.length > 0) {
+                const updatedTrack = { ...tracks[0], rating: newRating };
+                await databaseManagers.music.upsert(updatedTrack);
+                setCurrentRating(newRating);
+            }
+        } catch (error) {
+            console.error('Error updating track rating:', error);
+        }
+    };
+
+    const renderRating = () => (
+        <View style={styles.ratingContainer}>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <Pressable
+                    key={star}
+                    onPress={() => handleRatingChange(star)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Add hit slop
+                    style={({ pressed }) => [
+                        styles.starButton,
+                        pressed && styles.starButtonPressed
+                    ]}
+                >
+                    <FontAwesomeIcon 
+                        icon={faStar} 
+                        size={18} 
+                        color={star <= currentRating ? themeColors.textColor : themeColors.borderColor} 
+                    />
+                </Pressable>
+            ))}
+        </View>
+    );
 
     const { themeColors } = useThemeStyles();
     const styles = getStyles(themeColors);
@@ -45,6 +101,7 @@ const MusicPlayerControls: React.FC = () => {
             <Text style={styles.nowPlaying} numberOfLines={1} ellipsizeMode="tail">
                 {songName}
             </Text>
+            {renderRating()}
             <Pressable onPress={stopSound} style={styles.closeButton}>
                 <FontAwesomeIcon icon={faTimes} color={themeColors.textColor} size={20} />
             </Pressable>
@@ -90,7 +147,7 @@ const getStyles = (themeColors: any) => StyleSheet.create({
         fontSize: 16,
         color: themeColors.textColorItalic,
         textAlign: 'center',
-        marginBottom: 10,
+        marginBottom: 4,
         fontFamily: 'serif'
     },
     sliderContainer: {
@@ -119,6 +176,22 @@ const getStyles = (themeColors: any) => StyleSheet.create({
         position: 'absolute',
         top: 10,
         right: 10,
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+        marginTop: -4,
+        zIndex: 100,
+    },
+    starButton: {
+        padding: 4,
+        marginHorizontal: 2,
+    },
+    starButtonPressed: {
+        opacity: 0.5,
+        transform: [{ scale: 1.2 }],
     },
 });
 
