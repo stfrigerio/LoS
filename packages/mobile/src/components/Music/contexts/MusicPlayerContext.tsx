@@ -16,269 +16,251 @@ import { databaseManagers } from '@los/mobile/src/database/tables';
 import { TrackData } from '@los/shared/src/types/Library';
 
 interface MusicPlayerContextType {
-	currentSong: string | null;
-	currentTrackData: TrackData | null;
-	albumName: string | null;
-	songs: string[];
-	isPlaying: boolean;
-	duration: number;
-	position: number;
-	playSound: (
-		albumName: string,
-		songName: string,
-		albumSongs: string[]
-	) => void;
-	pauseSound: () => void;
-	resumeSound: () => void;
-	playNextSong: () => void;
-	playPreviousSong: () => void;
-	seekTo: (value: number) => void;
-	stopSound: () => void;
+    currentSong: string | null;
+    currentTrackData: TrackData | null;
+    albumName: string | null;
+    songs: string[];
+    isPlaying: boolean;
+    duration: number;
+    position: number;
+    updateTrackRating: (rating: number) => Promise<void>;
+    playSound: (albumName: string, songName: string, albumSongs: string[]) => void;
+    pauseSound: () => void;
+    resumeSound: () => void;
+    playNextSong: () => void;
+    playPreviousSong: () => void;
+    seekTo: (value: number) => void;
+    stopSound: () => void;
 }
 
-const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(
-	undefined
-);
+const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
 
-interface MusicPlayerProviderProps {
-	children: ReactNode;
-}
+export const MusicPlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const [currentSong, setCurrentSong] = useState<string | null>(null);
+    const [albumName, setAlbumName] = useState<string | null>(null);
+    const [songs, setSongs] = useState<string[]>([]);
+    const [currentIndex, setCurrentIndex] = useState<number>(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [position, setPosition] = useState(0);
+    const [currentTrackData, setCurrentTrackData] = useState<TrackData | null>(null);
 
-export const MusicPlayerProvider: React.FC<MusicPlayerProviderProps> = ({
-	children,
-}) => {
-	const [sound, setSound] = useState<Audio.Sound | null>(null);
-	const [currentSong, setCurrentSong] = useState<string | null>(null);
-	const [albumName, setAlbumName] = useState<string | null>(null);
-	const [songs, setSongs] = useState<string[]>([]);
-	const [currentIndex, setCurrentIndex] = useState<number>(0);
-	const [isPlaying, setIsPlaying] = useState(false);
-	const [duration, setDuration] = useState(0);
-	const [position, setPosition] = useState(0);
-	const [currentTrackData, setCurrentTrackData] = useState<TrackData | null>(null);
+    // Refs for state management
+    const songsRef = useRef<string[]>([]);
+    const albumNameRef = useRef<string | null>(null);
+    const currentIndexRef = useRef<number>(0);
+    const playNextSongRef = useRef<() => Promise<void>>();
+    const isLoadingRef = useRef<boolean>(false);
 
-	// Refs to hold the latest state values
-	const songsRef = useRef<string[]>([]);
-	const albumNameRef = useRef<string | null>(null);
-	const currentIndexRef = useRef<number>(0);
+    // Update refs when state changes
+    useEffect(() => {
+        songsRef.current = songs;
+        albumNameRef.current = albumName;
+        currentIndexRef.current = currentIndex;
+    }, [songs, albumName, currentIndex]);
 
-	// Ref for playNextSong to avoid circular dependency
-	const playNextSongRef = useRef<() => Promise<void>>();
+    const stopSound = useCallback(async () => {
+        if (!sound) return;
 
-	// Flag to prevent multiple simultaneous loadSound calls
-	const isLoadingRef = useRef<boolean>(false);
+        try {
+            await sound.stopAsync();
+            await sound.unloadAsync();
+            setSound(null);
+            setIsPlaying(false);
+            setPosition(0);
+            setDuration(0);
+            setCurrentSong(null);
+            setAlbumName(null);
+            setSongs([]);
+            setCurrentIndex(0);
+        } catch (error) {
+            console.error('Error stopping sound:', error);
+        }
+    }, [sound]);
 
-	// Update refs whenever state changes
-	useEffect(() => {
-		songsRef.current = songs;
-	}, [songs]);
+    const loadSound = useCallback(async (albumName: string, songName: string): Promise<void> => {
+        try {
+            const songUri = `${FileSystem.documentDirectory}Music/${albumName}/${songName}`;
+            const fileInfo = await FileSystem.getInfoAsync(songUri);
+            
+            if (!fileInfo.exists) {
+                console.error(`File does not exist: ${songUri}`);
+                setTimeout(() => playNextSongRef.current?.(), 1000);
+                return;
+            }
 
-	useEffect(() => {
-		albumNameRef.current = albumName;
-	}, [albumName]);
+            const { sound: newSound } = await Audio.Sound.createAsync(
+                { uri: songUri },
+                { shouldPlay: true }
+            );
 
-	useEffect(() => {
-		currentIndexRef.current = currentIndex;
-	}, [currentIndex]);
+            if (sound) {
+                await sound.unloadAsync();
+            }
 
-	// Define stopSound first
-	const stopSound = useCallback(async () => {
-		if (sound) {
-			await sound.stopAsync().catch((error) =>
-				console.error('Error stopping sound:', error)
-			);
-			await sound.unloadAsync().catch((error) =>
-				console.error('Error unloading sound:', error)
-			);
-		}
-		setSound(null);
-		setIsPlaying(false);
-		setPosition(0);
-		setDuration(0);
-		setCurrentSong(null);
-		setAlbumName(null);
-		setSongs([]);
-		setCurrentIndex(0);
-	}, [sound]);
+            setSound(newSound);
+            setIsPlaying(true);
+            setCurrentSong(songName);
+        } catch (error) {
+            console.error('Failed to load sound:', error);
+            setTimeout(() => playNextSongRef.current?.(), 1000);
+        }
+    }, [sound]);
 
-	// Define loadSound next
-	const loadSound = useCallback(
-		async (albumName: string, songName: string): Promise<void> => {
-			try {
-				const songUri = `${FileSystem.documentDirectory}Music/${albumName}/${songName}`;
-				console.log('Loading song from URI:', songUri);
+    const updateTrackRating = useCallback(async (rating: number) => {
+        if (!currentTrackData) return;
+        
+        try {
+            const updatedTrack = { 
+                ...currentTrackData, 
+                rating,
+                updatedAt: new Date().toISOString()
+            };
+            await databaseManagers.music.upsert(updatedTrack);
+            setCurrentTrackData(updatedTrack);
+        } catch (error) {
+            console.error('Error updating track rating:', error);
+            throw error;
+        }
+    }, [currentTrackData]);
 
-				const fileInfo = await FileSystem.getInfoAsync(songUri);
-				if (!fileInfo.exists) {
-					console.error(`File does not exist: ${songUri}`);
-					// Introduce a delay to prevent rapid looping
-					setTimeout(() => {
-						playNextSongRef.current?.();
-					}, 1000); // 1-second delay
-					return;
-				}
+	const incrementPlayCount = useCallback(async () => {
+        if (!currentTrackData) return;
 
-				const { sound: newSound } = await Audio.Sound.createAsync(
-					{ uri: songUri },
-					{ shouldPlay: true }
-				);
+        try {
+            const updatedTrack = {
+                ...currentTrackData,
+                playCount: (currentTrackData.playCount || 0) + 1,
+                updatedAt: new Date().toISOString()
+            };
+            await databaseManagers.music.upsert(updatedTrack);
+            setCurrentTrackData(updatedTrack);
+        } catch (error) {
+            console.error('Error updating play count:', error);
+        }
+    }, [currentTrackData]);
 
-				// Unload the previous sound if it exists
-				if (sound) {
-					await sound.unloadAsync().catch((error) =>
-						console.error('Error unloading previous sound:', error)
-					);
-				}
+	const fetchTrackData = useCallback(async (songName: string) => {
+        try {
+            let tracks = await databaseManagers.music.getMusicTracks({ fileName: songName });
+            
+            if (!tracks?.length) {
+                const trackName = songName.split('.').slice(0, -1).join('.');
+                tracks = await databaseManagers.music.getMusicTracks({ trackName });
+            }
 
-				setSound(newSound);
-				setIsPlaying(true);
-				setCurrentSong(songName);
-			} catch (error) {
-				console.error('Failed to load sound:', error);
-				// Introduce a delay to prevent rapid looping
-				setTimeout(() => {
-					playNextSongRef.current?.();
-				}, 1000); // 1-second delay
-			}
-		},
-		[sound]
-	);
+            setCurrentTrackData(tracks?.[0] || null);
+        } catch (error) {
+            console.error('Error fetching track data:', error);
+            setCurrentTrackData(null);
+        }
+    }, []);
 
-	// Define playNextSong
-	const playNextSong = useCallback(async () => {
-		if (isLoadingRef.current) {
-			// Prevent multiple simultaneous loadSound calls
-			return;
-		}
+    const playNextSong = useCallback(async () => {
+        if (isLoadingRef.current || songsRef.current.length === 0) return;
 
-		if (songsRef.current.length === 0) {
-			console.log('No songs in the playlist');
-			return;
-		}
+        const nextIndex = (currentIndexRef.current + 1) % songsRef.current.length;
+        const nextSong = songsRef.current[nextIndex];
+        setCurrentIndex(nextIndex);
+        setCurrentSong(nextSong);
 
-		const nextIndex = (currentIndexRef.current + 1) % songsRef.current.length;
-		const nextSong = songsRef.current[nextIndex];
-		setCurrentIndex(nextIndex);
-		setCurrentSong(nextSong);
+        if (albumNameRef.current) {
+            isLoadingRef.current = true;
+            await fetchTrackData(nextSong);  // Add this line
+            await loadSound(albumNameRef.current, nextSong);
+            isLoadingRef.current = false;
+        } else {
+            console.error('Album name is null');
+            stopSound();
+        }
+    }, [loadSound, stopSound, fetchTrackData]);
 
-		if (albumNameRef.current) {
-			isLoadingRef.current = true;
-			await loadSound(albumNameRef.current, nextSong);
-			isLoadingRef.current = false;
-		} else {
-			console.error('Album name is null, cannot load next song');
-			stopSound();
-		}
-	}, [loadSound, stopSound]);
+    useEffect(() => {
+        playNextSongRef.current = playNextSong;
+    }, [playNextSong]);
 
-	// Assign playNextSong to ref
-	useEffect(() => {
-		playNextSongRef.current = playNextSong;
-	}, [playNextSong]);
+    const playPreviousSong = useCallback(async () => {
+        if (isLoadingRef.current || currentIndexRef.current === 0) return;
 
-	// Playback status callback setup
-	useEffect(() => {
-		if (sound) {
-			const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-				if (status.isLoaded) {
-					setDuration(status.durationMillis || 0);
-					setPosition(status.positionMillis || 0);
-					if (status.didJustFinish && !status.isLooping) {
-						playNextSongRef.current?.();
-					}
-				} else if (status.error) {
-					console.error('Playback error:', status.error);
-					playNextSongRef.current?.(); // Attempt to play the next song even if there's an error
-				}
-			};
+        const prevIndex = currentIndexRef.current - 1;
+        const prevSong = songsRef.current[prevIndex];
+        setCurrentIndex(prevIndex);
+        setCurrentSong(prevSong);
 
-			sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+        if (albumNameRef.current) {
+            isLoadingRef.current = true;
+            await fetchTrackData(prevSong);  // Add this line
+            await loadSound(albumNameRef.current, prevSong);
+            isLoadingRef.current = false;
+        } else {
+            console.error('Album name is null');
+            stopSound();
+        }
+    }, [loadSound, stopSound, fetchTrackData]);
 
-			return () => {
-				sound.setOnPlaybackStatusUpdate(null);
-			};
-		}
-	}, [sound]);
+    useEffect(() => {
+        if (!sound) return;
 
-	const playSoundHandler = useCallback(
-		async (
-			newAlbumName: string,
-			songName: string,
-			newAlbumSongs: string[]
-		) => {
-			const newIndex = newAlbumSongs.indexOf(songName);
-			if (newIndex === -1) {
-				console.error('Song not found in the album songs list');
-				return;
-			}
+        const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+            if (!status.isLoaded) {
+                if (status.error) {
+                    console.error('Playback error:', status.error);
+                    playNextSongRef.current?.();
+                }
+                return;
+            }
 
-			setCurrentSong(songName);
-			setAlbumName(newAlbumName);
-			setSongs(newAlbumSongs);
-			setCurrentIndex(newIndex);
+            setDuration(status.durationMillis || 0);
+            setPosition(status.positionMillis || 0);
+            
+            if (status.didJustFinish && !status.isLooping) {
+                incrementPlayCount().then(() => {
+                    playNextSongRef.current?.();
+                });
+            }
+        };
 
-			try {
-				const trackName = songName.split('.').slice(0, -1).join('.');
-				const tracks = await databaseManagers.music.getMusicTracks({ trackName });
-				if (tracks && tracks.length > 0) {
-					setCurrentTrackData(tracks[0]);
-				}
-			} catch (error) {
-				console.error('Error fetching track data:', error);
-			}
+        sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+        return () => sound.setOnPlaybackStatusUpdate(null);
+    }, [sound])
 
-			loadSound(newAlbumName, songName);
-		},
-		[loadSound]
-	);
+    const playSoundHandler = useCallback(async (
+        newAlbumName: string,
+        songName: string,
+        newAlbumSongs: string[]
+    ) => {
+        const newIndex = newAlbumSongs.indexOf(songName);
+        if (newIndex === -1) return;
 
-	const pauseSound = useCallback(async () => {
-		if (sound) {
-			await sound.pauseAsync();
-			setIsPlaying(false);
-		}
-	}, [sound]);
+        setCurrentSong(songName);
+        setAlbumName(newAlbumName);
+        setSongs(newAlbumSongs);
+        setCurrentIndex(newIndex);
 
-	const resumeSound = useCallback(async () => {
-		if (sound) {
-			await sound.playAsync();
-			setIsPlaying(true);
-		}
-	}, [sound]);
+        await fetchTrackData(songName);
+        loadSound(newAlbumName, songName);
+    }, [loadSound, fetchTrackData]);
 
-	const playPreviousSong = useCallback(async () => {
-		if (isLoadingRef.current) {
-			return;
-		}
+    const pauseSound = useCallback(async () => {
+        if (sound) {
+            await sound.pauseAsync();
+            setIsPlaying(false);
+        }
+    }, [sound]);
 
-		if (currentIndexRef.current === 0) {
-			console.log('Already at the first song');
-			return;
-		}
+    const resumeSound = useCallback(async () => {
+        if (sound) {
+            await sound.playAsync();
+            setIsPlaying(true);
+        }
+    }, [sound]);
 
-		const prevIndex = currentIndexRef.current - 1;
-		const prevSong = songsRef.current[prevIndex];
-		setCurrentIndex(prevIndex);
-		setCurrentSong(prevSong);
-
-		if (albumNameRef.current) {
-			isLoadingRef.current = true;
-			await loadSound(albumNameRef.current, prevSong);
-			isLoadingRef.current = false;
-		} else {
-			console.error('Album name is null, cannot load previous song');
-			stopSound();
-		}
-	}, [loadSound, stopSound]);
-
-	const seekTo = useCallback(
-		async (value: number) => {
-			if (sound) {
-				await sound.setPositionAsync(value);
-			}
-		},
-		[sound]
-	);
+    const seekTo = useCallback(async (value: number) => {
+        if (sound) {
+            await sound.setPositionAsync(value);
+        }
+    }, [sound]);
 
 	// Memoize the context value to prevent unnecessary re-renders
 	const contextValue = useMemo(
@@ -297,6 +279,7 @@ export const MusicPlayerProvider: React.FC<MusicPlayerProviderProps> = ({
 			seekTo,
 			stopSound,
 			currentTrackData,
+			updateTrackRating,
 		}),
 		[
 			currentSong,
@@ -313,6 +296,7 @@ export const MusicPlayerProvider: React.FC<MusicPlayerProviderProps> = ({
 			seekTo,
 			stopSound,
 			currentTrackData,
+			updateTrackRating,
 		]
 	);
 

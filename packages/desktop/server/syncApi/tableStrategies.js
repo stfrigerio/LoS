@@ -120,6 +120,9 @@ const fetchStrategies = {
     },
     Objectives: async (db, startOfMonth, endOfMonth) => {
         return getRelevantEntries(db, db.Objectives, startOfMonth, endOfMonth);
+    },
+    Music: async (db) => {
+        return db.Music.findAll();
     }
 };
 
@@ -268,6 +271,13 @@ const syncStrategies = {
     Objectives: async (db, entry) => {
         return syncUpsert(db.Objectives, entry, {
             requiredFields: ['objective'],
+            logPrefix: 'Sync',
+            filename: 'syncApi.js'
+        });
+    },
+    Music: async (db, entry) => {
+        return syncUpsert(db.Music, entry, {
+            requiredFields: ['trackName', 'libraryUuid'],
             logPrefix: 'Sync',
             filename: 'syncApi.js'
         });

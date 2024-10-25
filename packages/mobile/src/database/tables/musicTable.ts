@@ -5,6 +5,7 @@ import { TrackData } from '@los/shared/src/types/Library';
 export interface MusicQuery {
     libraryUuid?: string;
     trackName?: string;
+    fileName?: string;
     sort?: 'popularity' | 'trackNumber' | 'playCount';
     limit?: number;
     offset?: number;
@@ -17,6 +18,7 @@ const musicTableStructure: TableStructure = {
         uuid: 'TEXT NOT NULL UNIQUE',
         libraryUuid: 'TEXT NOT NULL',
         trackName: 'TEXT NOT NULL',
+        fileName: 'TEXT',
         trackNumber: 'INTEGER NOT NULL',
         durationMs: 'INTEGER NOT NULL',
         popularity: 'INTEGER',
@@ -65,6 +67,11 @@ class MusicManager extends BaseTableManager<TrackData> {
         if (filter.trackName) {
             conditions.push('trackName LIKE ?');
             queryParams.push(`%${filter.trackName}%`);
+        }
+
+        if (filter.fileName) {
+            conditions.push('fileName = ?');
+            queryParams.push(filter.fileName);
         }
 
         if (conditions.length > 0) {

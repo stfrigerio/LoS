@@ -16,6 +16,7 @@ module.exports = (sequelize, DataTypes) => {
         libraryUuid: {
             type: DataTypes.UUID,
             allowNull: false,
+            field: 'library_uuid',
             references: {
                 model: 'Library',
                 key: 'uuid'
@@ -27,13 +28,19 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false
         },
+        fileName: {
+            type: DataTypes.STRING,
+            field: 'file_name'
+        },
         trackNumber: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            field: 'track_number'
         },
         durationMs: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            field: 'duration_ms'
         },
         popularity: {
             type: DataTypes.INTEGER
@@ -60,7 +67,8 @@ module.exports = (sequelize, DataTypes) => {
         timeSignature: {
             type: DataTypes.STRING,
             allowNull: false,
-            comment: 'Time signature (e.g., 4/4)'
+            comment: 'Time signature (e.g., 4/4)',
+            field: 'time_signature'
         },
         // Audio characteristics (0-100)
         danceability: {
@@ -122,7 +130,8 @@ module.exports = (sequelize, DataTypes) => {
         playCount: {
             type: DataTypes.INTEGER,
             defaultValue: 0,
-            allowNull: false
+            allowNull: false,
+            field: 'play_count'
         },
         rating: {
             type: DataTypes.INTEGER,
@@ -159,7 +168,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Music.associate = (models) => {
         Music.belongsTo(models.Library, {
-            foreignKey: 'libraryUuid',
+            foreignKey: 'library_uuid',
             targetKey: 'uuid',
             as: 'library'
         });

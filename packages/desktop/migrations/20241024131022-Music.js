@@ -18,6 +18,7 @@ module.exports = {
             libraryUuid: { 
                 type: Sequelize.UUID,
                 allowNull: false,
+                field: 'library_uuid',
                 references: {
                     model: 'Library',
                     key: 'uuid'
@@ -28,19 +29,27 @@ module.exports = {
             trackName: {
                 type: Sequelize.STRING,
                 allowNull: false,
-                unique: true
+                unique: true,
+                field: 'track_name'
+            },
+            fileName: {
+                type: Sequelize.STRING,
+                field: 'file_name'
             },
             durationMs: {
                 type: Sequelize.INTEGER,
+                field: 'duration_ms'
             },
             popularity: {
                 type: Sequelize.INTEGER,
             },
             previewUrl: {
                 type: Sequelize.STRING,
+                field: 'preview_url'
             },
             trackNumber: {
                 type: Sequelize.INTEGER,
+                field: 'track_number'
             },
             tempo: {
                 type: Sequelize.STRING,
@@ -53,6 +62,7 @@ module.exports = {
             },
             timeSignature: {
                 type: Sequelize.STRING,
+                field: 'time_signature'
             },
             danceability: {
                 type: Sequelize.INTEGER,
@@ -77,7 +87,8 @@ module.exports = {
             },
             playCount: {
                 type: Sequelize.INTEGER,
-                defaultValue: 0
+                defaultValue: 0,
+                field: 'play_count'
             },
             rating: {
                 type: Sequelize.INTEGER,
@@ -96,8 +107,8 @@ module.exports = {
         });
 
         // Create indexes for better query performance
-        await queryInterface.addIndex('Music', ['libraryUuid']);
-        await queryInterface.addIndex('Music', ['trackName']);
+        await queryInterface.addIndex('Music', ['library_uuid']);
+        await queryInterface.addIndex('Music', ['track_name']);
     },
 
     async down(queryInterface, Sequelize) {

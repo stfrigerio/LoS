@@ -2,6 +2,7 @@ import { Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { databaseManagers } from '@los/mobile/src/database/tables';
 import { getNodeServerURL } from '@los/mobile/src/components/Database/hooks/databaseConfig';
+import { compareTwoStrings } from 'string-similarity'; // We'll need to install this package
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds

@@ -40,6 +40,7 @@ export type LibraryQuery = {
     limit?: number;
     offset?: number;
     sort?: SortOptionType;
+    uuid?: string; 
 };
 
 export interface BasicMediaItem {
@@ -88,6 +89,7 @@ export interface TrackData {
     uuid: string;
     libraryUuid: string;
     trackName: string;
+    fileName?: string;
     trackNumber: number;
     durationMs: number;
     popularity?: number;

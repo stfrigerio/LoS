@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList, Alert, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList, Alert, BackHandler, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faArrowLeft, faMusic, faPlay, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faMusic, faPlay, faStar, faLink, faMagicWandSparkles } from '@fortawesome/free-solid-svg-icons';
 
 import MusicPlayerControls from './components/MusicPlayerControls';
+import LinkTrackModal from './modals/LinkTrackModal';
+
 import { databaseManagers } from '@los/mobile/src/database/tables';
+import { autoLinkTracks } from './helpers/autoLinkTracks';
 import { TrackData } from '@los/shared/src/types/Library';
 import { useMusicPlayer } from './contexts/MusicPlayerContext';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
@@ -14,14 +17,21 @@ import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 interface Album {
     name: string;
     songs: string[];
+    uuid?: string;
+}
+
+interface ExtendedTrackData extends TrackData {
+    artistName: string;
 }
 
 const MusicPlayer = () => {
     const [albums, setAlbums] = useState<Album[]>([]);
     const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
     const [trackDetails, setTrackDetails] = useState<{ [key: string]: TrackData }>({});
+    const [selectedSongForLinking, setSelectedSongForLinking] = useState<string | null>(null);
+    const [availableTracks, setAvailableTracks] = useState<ExtendedTrackData[]>([]);
 
-    const { playSound } = useMusicPlayer();
+    const { playSound, currentTrackData } = useMusicPlayer();
 
     const { themeColors, designs } = useThemeStyles();
     const styles = getStyles(themeColors);
@@ -36,15 +46,33 @@ const MusicPlayer = () => {
         }
     }, [selectedAlbum]);
 
+    useEffect(() => {
+        if (currentTrackData) {
+            loadTrackDetails();
+        }
+    }, [currentTrackData]);
+
     const loadTrackDetails = async () => {
         if (!selectedAlbum) return;
         
         const details: { [key: string]: TrackData } = {};
         for (const song of selectedAlbum.songs) {
-            const trackName = song.split('.').slice(0, -1).join('.');
             try {
-                const tracks = await databaseManagers.music.getMusicTracks({ trackName });
+                // First try to get track by fileName
+                let tracks = await databaseManagers.music.getMusicTracks({ 
+                    fileName: song 
+                });
+                
+                // If not found by fileName, try by trackName
+                if (!tracks || tracks.length === 0) {
+                    const trackName = song.split('.').slice(0, -1).join('.');
+                    tracks = await databaseManagers.music.getMusicTracks({ 
+                        trackName 
+                    });
+                }
+
                 if (tracks && tracks.length > 0) {
+                    const trackName = song.split('.').slice(0, -1).join('.');
                     details[trackName] = tracks[0];
                 }
             } catch (error) {
@@ -76,39 +104,27 @@ const MusicPlayer = () => {
         const musicDir = `${FileSystem.documentDirectory}Music`;
         try {
             const albumDirs = await FileSystem.readDirectoryAsync(musicDir);
+            
+            // Get all music albums from library
+            const libraryAlbums = await databaseManagers.library.getLibrary({ 
+                type: 'music' 
+            });
+    
             const loadedAlbums: Album[] = await Promise.all(
                 albumDirs.map(async (albumName) => {
                     const albumPath = `${musicDir}/${albumName}`;
                     const songs = await FileSystem.readDirectoryAsync(albumPath);
-                    return { name: albumName, songs };
+                    const libraryEntry = libraryAlbums.find(album => album.title === albumName);
+                    return { 
+                        name: albumName, 
+                        songs,
+                        uuid: libraryEntry?.uuid
+                    };
                 })
             );
             setAlbums(loadedAlbums);
         } catch (error) {
             console.error('Failed to load albums:', error);
-        }
-    };
-
-    const handlePlaySound = async (albumName: string, songName: string, albumSongs: string[]) => {
-        // Get the track from database before playing
-        try {
-            const trackName = songName.split('.').slice(0, -1).join('.');
-            const tracks = await databaseManagers.music.getMusicTracks({ trackName });
-            
-            if (tracks && tracks.length > 0) {
-                // Increment play count
-                const updatedTrack = {
-                    ...tracks[0],
-                    playCount: (tracks[0].playCount || 0) + 1
-                };
-                await databaseManagers.music.upsert(updatedTrack);
-            }
-            
-            playSound(albumName, songName, albumSongs);
-        } catch (error) {
-            console.error('Error updating track play count:', error);
-            // Still play the sound even if database update fails
-            playSound(albumName, songName, albumSongs);
         }
     };
 
@@ -144,6 +160,113 @@ const MusicPlayer = () => {
             <Text style={styles.songCount}>{item.songs.length} tracks</Text>
         </Pressable>
     );
+
+    const loadAvailableTracks = async () => {
+        try {
+            // Get all tracks for this album
+            const tracks = await databaseManagers.music.getMusicTracks({ 
+                libraryUuid: selectedAlbum!.uuid
+            });
+            
+            // Get the album details from library
+            const albumDetails = await databaseManagers.library.getLibrary({
+                uuid: tracks[0]?.libraryUuid
+            });
+
+            // Process tracks to add artist name from album creator
+            const tracksWithArtist = tracks.map(track => ({
+                ...track,
+                artistName: albumDetails[0]?.creator || 'Unknown Artist'
+            }));
+
+            // Filter out tracks that are already linked to files
+            const unlinkedTracks = tracksWithArtist.filter(track => !track.fileName);
+            setAvailableTracks(unlinkedTracks);
+        } catch (error) {
+            console.error('Error loading available tracks:', error);
+        }
+    };
+
+    const handleLinkTrack = async (selectedTrack: ExtendedTrackData) => {
+        if (!selectedSongForLinking) return;
+        
+        try {
+            // Remove artistName from the track data before saving
+            const { artistName, ...trackDataToSave } = selectedTrack;
+            
+            await databaseManagers.music.upsert({
+                ...trackDataToSave,
+                fileName: selectedSongForLinking
+            });
+            setSelectedSongForLinking(null);
+            loadTrackDetails();
+        } catch (error) {
+            console.error('Error linking track:', error);
+            Alert.alert('Error', 'Failed to link track to file');
+        }
+    };
+
+    const handleAutoLink = async () => {
+        if (!selectedAlbum?.uuid) return;
+
+        try {
+            const result = await autoLinkTracks(
+                selectedAlbum.uuid, 
+                selectedAlbum.songs,
+                { 
+                    similarityThreshold: 0.8,
+                    ignoreTrackNumbers: true,
+                    ignoreCase: true
+                }
+            );
+
+            if (result.success) {
+                Alert.alert(
+                    'Auto-link Complete', 
+                    `Successfully linked ${result.linkedCount} tracks.`
+                );
+                loadTrackDetails();
+            } else {
+                Alert.alert(
+                    'Auto-link Failed',
+                    result.errors?.join('\n') || 'Unknown error occurred'
+                );
+            }
+        } catch (error) {
+            console.error('Error during auto-link:', error);
+            Alert.alert('Error', 'Failed to auto-link tracks');
+        }
+    };
+
+    const renderAlbumHeader = () => {
+        if (!selectedAlbum) return null;
+
+        return (
+            <View style={styles.albumHeader}>
+                <Pressable 
+                    style={styles.backButton} 
+                    onPress={() => setSelectedAlbum(null)}
+                >
+                    <FontAwesomeIcon 
+                        icon={faArrowLeft} 
+                        color={themeColors.textColor} 
+                        size={20} 
+                    />
+                </Pressable>
+                <Text style={styles.albumTitle}>{selectedAlbum.name}</Text>
+                <Pressable 
+                    style={styles.autoLinkButton}
+                    onPress={handleAutoLink}
+                >
+                    <FontAwesomeIcon 
+                        icon={faMagicWandSparkles} 
+                        size={14} 
+                        color={themeColors.textColorItalic} 
+                    />
+                </Pressable>
+            </View>
+        );
+    };
     
     const renderSongItem = ({ item, index }: { item: string, index: number }) => {
         const trackName = item.split('.').slice(0, -1).join('.');
@@ -155,7 +278,7 @@ const MusicPlayer = () => {
                     styles.songItem,
                     pressed && styles.songItemPressed
                 ]} 
-                onPress={() => handlePlaySound(selectedAlbum!.name, item, selectedAlbum!.songs)}
+                onPress={() => playSound(selectedAlbum!.name, item, selectedAlbum!.songs)}
             >
                 <View style={styles.songMainInfo}>
                     <View style={styles.songIconContainer}>
@@ -167,7 +290,7 @@ const MusicPlayer = () => {
                         <Text style={styles.songTitle}>
                             {trackName}
                         </Text>
-                        {trackData && (
+                        {trackData ? (
                             <View style={styles.songMetadata}>
                                 {renderRating(trackData.rating)}
                                 <Text style={styles.playCount}>
@@ -178,6 +301,21 @@ const MusicPlayer = () => {
                                     {String(Math.floor((trackData.durationMs / 1000) % 60)).padStart(2, '0')}
                                 </Text>
                             </View>
+                        ) : (
+                            <Pressable 
+                                style={styles.linkButton}
+                                onPress={() => {
+                                    loadAvailableTracks();
+                                    setSelectedSongForLinking(item);
+                                }}
+                            >
+                                <FontAwesomeIcon 
+                                    icon={faLink} 
+                                    size={14} 
+                                    color={themeColors.textColorItalic} 
+                                />
+                                <Text style={styles.linkText}>Link to track</Text>
+                            </Pressable>
                         )}
                     </View>
                 </View>
@@ -195,19 +333,7 @@ const MusicPlayer = () => {
             <Text style={styles.title}>Music Library</Text>
             {selectedAlbum ? (
                 <>
-                    <View style={styles.headerContainer}>
-                        <Pressable 
-                            style={styles.backButton} 
-                            onPress={() => setSelectedAlbum(null)}
-                        >
-                            <FontAwesomeIcon 
-                                icon={faArrowLeft} 
-                                color={themeColors.textColor} 
-                                size={20} 
-                            />
-                        </Pressable>
-                        <Text style={styles.selectedAlbumTitle}>{selectedAlbum.name}</Text>
-                    </View>
+                    {renderAlbumHeader()}
                     <FlatList
                         data={selectedAlbum.songs}
                         renderItem={renderSongItem}
@@ -226,6 +352,13 @@ const MusicPlayer = () => {
             <View style={styles.playerControlsContainer}>
                 <MusicPlayerControls />
             </View>
+            <LinkTrackModal 
+                isVisible={!!selectedSongForLinking}
+                onClose={() => setSelectedSongForLinking(null)}
+                fileName={selectedSongForLinking || ''}
+                availableTracks={availableTracks}
+                onLinkTrack={handleLinkTrack}
+            />
         </View>
     );
 };
@@ -244,12 +377,6 @@ const getStyles = (themeColors: any) => StyleSheet.create({
         marginTop: 60,
         marginBottom: 20,
         paddingHorizontal: 20,
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        marginBottom: 20,
     },
     backButton: {
         padding: 10,
@@ -362,6 +489,42 @@ const getStyles = (themeColors: any) => StyleSheet.create({
         fontSize: 14,
         color: themeColors.textColorItalic,
         fontFamily: 'monospace',
+    },
+    linkButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 4,
+    },
+    linkText: {
+        fontSize: 12,
+        color: themeColors.textColorItalic,
+    },
+    albumHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        backgroundColor: themeColors.cardColor,
+        marginHorizontal: 20,
+        marginBottom: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: themeColors.borderColor,
+    },
+    autoLinkButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: themeColors.backgroundColor,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        gap: 8,
+    },
+    autoLinkText: {
+        fontSize: 14,
+        color: themeColors.textColorItalic,
     },
 });
 

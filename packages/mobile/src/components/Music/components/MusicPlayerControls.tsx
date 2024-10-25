@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlay, faPause, faStepForward, faStepBackward, faTimes, faStar } from '@fortawesome/free-solid-svg-icons';
+import { 
+    faPlay, 
+    faPause, 
+    faStepForward, 
+    faStepBackward, 
+    faTimes, 
+    faStar 
+} from '@fortawesome/free-solid-svg-icons';
 import Slider from '@react-native-community/slider';
 import { useThemeStyles } from '@los/shared/src/styles/useThemeStyles';
 import { useMusicPlayer } from '../contexts/MusicPlayerContext';
-
-import { databaseManagers } from '@los/mobile/src/database/tables';
 
 const MusicPlayerControls: React.FC = () => {
     const {
@@ -21,70 +26,64 @@ const MusicPlayerControls: React.FC = () => {
         playPreviousSong,
         seekTo,
         stopSound,
+        updateTrackRating,
     } = useMusicPlayer();
-
-    const [songName, setSongName] = useState<string>('');
-    const [currentRating, setCurrentRating] = useState<number>(0);
-
-    useEffect(() => {
-        if (currentSong) {
-            setSongName(currentSong.split('.').slice(0, -1).join('.'));
-        }
-    }, [currentSong]);
-
-    const handleRatingChange = async (newRating: number) => {
-        if (!currentTrackData) return;
-        try {
-            const updatedTrack = { ...currentTrackData, rating: newRating };
-            await databaseManagers.music.upsert(updatedTrack);
-        } catch (error) {
-            console.error('Error updating track rating:', error);
-        }
-    };
-
-    const renderRating = () => (
-        <View style={styles.ratingContainer}>
-            {[1, 2, 3, 4, 5].map((star) => (
-                <Pressable
-                    key={star}
-                    onPress={() => handleRatingChange(star)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={({ pressed }) => [
-                        styles.starButton,
-                        pressed && styles.starButtonPressed
-                    ]}
-                >
-                    <FontAwesomeIcon 
-                        icon={faStar} 
-                        size={18} 
-                        color={star <= (currentTrackData?.rating || 0) ? themeColors.textColor : themeColors.borderColor} 
-                    />
-                </Pressable>
-            ))}
-        </View>
-    );
 
     const { themeColors } = useThemeStyles();
     const styles = getStyles(themeColors);
 
-    const formatTime = (milliseconds: number) => {
-        const totalSeconds = Math.floor(milliseconds / 1000);
+    const handleRatingChange = useCallback((rating: number) => {
+        if (updateTrackRating) {
+            Promise.resolve(updateTrackRating(rating)).catch(console.error);
+        }
+    }, [updateTrackRating]);
+
+    const formatTime = (ms: number) => {
+        const totalSeconds = Math.floor(ms / 1000);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
+    const renderRating = () => {
+        if (!currentTrackData) return null;
+        const currentRating = currentTrackData.rating || 0;
+        
+        return (
+            <View style={[styles.ratingContainer]}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <Pressable
+                        key={star}
+                        onPress={() => handleRatingChange(star)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <FontAwesomeIcon 
+                            icon={faStar} 
+                            size={18} 
+                            color={star <= currentRating ? themeColors.textColor : themeColors.borderColor} 
+                        />
+                    </Pressable>
+                ))}
+            </View>
+        );
+    };
+
     if (!currentSong) return null;
+
+    const songName = currentSong.split('.').slice(0, -1).join('.');
 
     return (
         <View style={styles.playerControls}>
             <Text style={styles.nowPlaying} numberOfLines={1} ellipsizeMode="tail">
                 {songName}
             </Text>
+            
             {renderRating()}
+
             <Pressable onPress={stopSound} style={styles.closeButton}>
                 <FontAwesomeIcon icon={faTimes} color={themeColors.textColor} size={20} />
             </Pressable>
+
             <View style={styles.sliderContainer}>
                 <Text style={styles.timeText}>{formatTime(position)}</Text>
                 <Slider
@@ -94,11 +93,12 @@ const MusicPlayerControls: React.FC = () => {
                     value={position}
                     onSlidingComplete={seekTo}
                     minimumTrackTintColor={themeColors.hoverColor}
-                    maximumTrackTintColor={'red'}
+                    maximumTrackTintColor={themeColors.borderColor}
                     thumbTintColor={themeColors.hoverColor}
                 />
                 <Text style={styles.timeText}>{formatTime(duration)}</Text>
             </View>
+
             <View style={styles.controlButtons}>
                 <Pressable onPress={playPreviousSong} style={styles.controlButton}>
                     <FontAwesomeIcon icon={faStepBackward} color={themeColors.textColor} size={24} />
@@ -118,10 +118,7 @@ const getStyles = (themeColors: any) => StyleSheet.create({
     playerControls: {
         padding: 10,
         backgroundColor: 'transparent',
-        borderTopLeftRadius: 15,
-        borderTopRightRadius: 15,
-        borderBottomLeftRadius: 15,
-        borderBottomRightRadius: 15
+        borderRadius: 15,
     },
     nowPlaying: {
         fontSize: 16,
@@ -161,17 +158,9 @@ const getStyles = (themeColors: any) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
-        marginTop: -4,
-        zIndex: 100,
-    },
-    starButton: {
-        padding: 4,
-        marginHorizontal: 2,
-    },
-    starButtonPressed: {
-        opacity: 0.5,
-        transform: [{ scale: 1.2 }],
+        marginVertical: 8,
+        height: 30,
+        gap: 20
     },
 });
 
