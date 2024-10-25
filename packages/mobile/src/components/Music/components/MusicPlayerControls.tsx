@@ -11,6 +11,7 @@ import { databaseManagers } from '@los/mobile/src/database/tables';
 const MusicPlayerControls: React.FC = () => {
     const {
         currentSong,
+        currentTrackData,
         isPlaying,
         duration,
         position,
@@ -28,35 +29,14 @@ const MusicPlayerControls: React.FC = () => {
     useEffect(() => {
         if (currentSong) {
             setSongName(currentSong.split('.').slice(0, -1).join('.'));
-            fetchCurrentRating();
         }
     }, [currentSong]);
 
-    const fetchCurrentRating = async () => {
-        if (!currentSong) return;
-        try {
-            const tracks = await databaseManagers.music.getMusicTracks({ 
-                trackName: currentSong.split('.').slice(0, -1).join('.') 
-            });
-            if (tracks && tracks.length > 0) {
-                setCurrentRating(tracks[0].rating || 0);
-            }
-        } catch (error) {
-            console.error('Error fetching track rating:', error);
-        }
-    };
-    
     const handleRatingChange = async (newRating: number) => {
-        if (!currentSong) return;
+        if (!currentTrackData) return;
         try {
-            const tracks = await databaseManagers.music.getMusicTracks({ 
-                trackName: currentSong.split('.').slice(0, -1).join('.') 
-            });
-            if (tracks && tracks.length > 0) {
-                const updatedTrack = { ...tracks[0], rating: newRating };
-                await databaseManagers.music.upsert(updatedTrack);
-                setCurrentRating(newRating);
-            }
+            const updatedTrack = { ...currentTrackData, rating: newRating };
+            await databaseManagers.music.upsert(updatedTrack);
         } catch (error) {
             console.error('Error updating track rating:', error);
         }
@@ -68,7 +48,7 @@ const MusicPlayerControls: React.FC = () => {
                 <Pressable
                     key={star}
                     onPress={() => handleRatingChange(star)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Add hit slop
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={({ pressed }) => [
                         styles.starButton,
                         pressed && styles.starButtonPressed
@@ -77,7 +57,7 @@ const MusicPlayerControls: React.FC = () => {
                     <FontAwesomeIcon 
                         icon={faStar} 
                         size={18} 
-                        color={star <= currentRating ? themeColors.textColor : themeColors.borderColor} 
+                        color={star <= (currentTrackData?.rating || 0) ? themeColors.textColor : themeColors.borderColor} 
                     />
                 </Pressable>
             ))}
