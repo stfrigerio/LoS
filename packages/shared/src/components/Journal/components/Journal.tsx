@@ -27,7 +27,7 @@ if (Platform.OS === 'web') {
 }
 
 const Journal: React.FC<{ date: string; uuid: string, onClose?: () => void }> = ({ date, uuid, onClose }) => {
-    const { journalEntry, loadJournalEntry, saveJournalEntry, deleteJournalEntry, place } = useJournal(date, uuid);
+    const { journalEntry, loadJournalEntry, saveJournalEntry, deleteJournalEntry, place, setPlace } = useJournal(date, uuid);
     const [localJournalEntry, setLocalJournalEntry] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [mentionedPeople, setMentionedPeople] = useState<PersonData[]>([]);
@@ -69,8 +69,6 @@ const Journal: React.FC<{ date: string; uuid: string, onClose?: () => void }> = 
                 }
 
                 setMentionedPeople([]);
-                // Update the journalEntry state after saving
-                await loadJournalEntry();
                 // Ensure localJournalEntry is updated with the latest saved entry
                 setLocalJournalEntry(localJournalEntry);
             } catch (error) {
@@ -130,9 +128,16 @@ const Journal: React.FC<{ date: string; uuid: string, onClose?: () => void }> = 
         onClose && onClose();
     };
 
-    const handleSetPlace = () => {
-        saveJournalEntry(localJournalEntry, newPlace);
-        setPlaceModalVisible(false);
+    const handleSetPlace = async () => {
+        try {
+            const savedEntry = await saveJournalEntry(localJournalEntry, newPlace);
+            setPlace(newPlace); // Update the place state in the hook
+            setNewPlace(newPlace); // Keep newPlace in sync
+            setPlaceModalVisible(false);
+        } catch (error) {
+            console.error('Error saving place:', error);
+            Alert.alert('Error', 'Failed to save place. Please try again.');
+        }
     };
 
     const formatDateTime = (date: string | number | Date) => {
@@ -223,6 +228,7 @@ const Journal: React.FC<{ date: string; uuid: string, onClose?: () => void }> = 
                         placeholderTextColor="gray"
                         value={newPlace}
                         onChangeText={setNewPlace}
+                        onSubmitEditing={handleSetPlace}
                     />
                     <Pressable onPress={handleSetPlace} style={designs.button.marzoSecondary}>
                         <Text style={designs.button.buttonText}>Save</Text>
